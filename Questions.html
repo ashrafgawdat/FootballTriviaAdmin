@@ -14,16 +14,92 @@
         .form-group {
             margin-bottom: 20px;
         }
+        .competitions-container {
+            display: flex;
+            gap: 20px;
+        }
+        .competition-group {
+            flex: 1;
+        }
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
-        select {
+        select, input[type="text"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .answer-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .answer-group input[type="text"] {
+            flex-grow: 1;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .question-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .answers-container {
+            margin-left: 20px;
+        }
+        .saved-questions {
+            margin-top: 40px;
+            border-top: 2px solid #ddd;
+            padding-top: 20px;
+        }
+        .saved-question {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .saved-question h3 {
+            margin: 0 0 10px 0;
+        }
+        .saved-answers {
+            margin-left: 20px;
+        }
+        .saved-answer {
+            margin: 5px 0;
+            padding: 5px 10px;
+        }
+        .saved-answer.correct {
+            background-color: #d4edda;
+            border-radius: 4px;
+        }
+        .question-meta {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -31,21 +107,40 @@
     <h1>Football Trivia Questions</h1>
     
     <form id="questionForm">
-        <div class="form-group">
-            <label for="competition">Competition:</label>
-            <select id="competition" name="competition" required>
-                <option value="">Select Competition</option>
-                <option value="1">World</option>
-                <option value="2">Europe</option>
-                <option value="3">Asia</option>
-                <option value="4">Africa</option>
-                <option value="5">Latin America</option>
-                <option value="6">Egypt</option>
-                <option value="7">Spain</option>
-                <option value="8">England</option>
-                <option value="9">Italy</option>
-                <option value="10">Germany</option>
-            </select>
+        <div class="competitions-container">
+            <div class="competition-group">
+                <label for="competition1">Competition 1:</label>
+                <select id="competition1" name="competition1" required>
+                    <option value="">Select Competition</option>
+                    <option value="1">World</option>
+                    <option value="2">Europe</option>
+                    <option value="3">Asia</option>
+                    <option value="4">Africa</option>
+                    <option value="5">Latin America</option>
+                    <option value="6">Egypt</option>
+                    <option value="7">Spain</option>
+                    <option value="8">England</option>
+                    <option value="9">Italy</option>
+                    <option value="10">Germany</option>
+                </select>
+            </div>
+
+            <div class="competition-group">
+                <label for="competition2">Competition 2:</label>
+                <select id="competition2" name="competition2">
+                    <option value="">Select Competition</option>
+                    <option value="1">World</option>
+                    <option value="2">Europe</option>
+                    <option value="3">Asia</option>
+                    <option value="4">Africa</option>
+                    <option value="5">Latin America</option>
+                    <option value="6">Egypt</option>
+                    <option value="7">Spain</option>
+                    <option value="8">England</option>
+                    <option value="9">Italy</option>
+                    <option value="10">Germany</option>
+                </select>
+            </div>
         </div>
 
         <div class="form-group">
@@ -57,13 +152,27 @@
                 <option value="3">Hard</option>
             </select>
         </div>
+
+        <div class="question-container">
+            <div class="form-group">
+                <label for="questionText">Question:</label>
+                <input type="text" id="questionText" required placeholder="Enter your question">
+            </div>
+            <div class="answers-container" id="answersContainer"></div>
+            <button type="button" class="btn btn-success" id="addAnswer">Add Answer</button>
+            <button type="button" class="btn btn-primary" id="saveQuestion">Save</button>
+        </div>
+
+        <div class="saved-questions">
+            <h2>Saved Questions</h2>
+            <div id="savedQuestionsContainer"></div>
+        </div>
     </form>
 
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
+        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -75,10 +184,193 @@
             appId: "1:807827295863:web:4d9ba6f0a5b77dcd954072"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase and Firestore
         const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // Form handling will be added later
+        // Add first answer automatically when page loads
+        addAnswer();
+
+        // Add change event listeners to filter controls
+        document.getElementById('competition1').addEventListener('change', fetchQuestions);
+        document.getElementById('competition2').addEventListener('change', fetchQuestions);
+        document.getElementById('level').addEventListener('change', fetchQuestions);
+
+        // Fetch questions on page load
+        fetchQuestions();
+
+        // Add answer handler
+        function addAnswer() {
+            const answersContainer = document.getElementById('answersContainer');
+            const answerId = `answer-${answersContainer.children.length}`;
+            
+            const answerHTML = `
+                <div class="answer-group" id="${answerId}">
+                    <input type="radio" name="correct-answer" value="${answerId}" required>
+                    <input type="text" required placeholder="Enter answer">
+                    <button type="button" class="btn btn-danger" onclick="deleteAnswer('${answerId}')">Delete</button>
+                </div>
+            `;
+            
+            answersContainer.insertAdjacentHTML('beforeend', answerHTML);
+        }
+
+        // Make addAnswer available globally
+        window.addAnswer = addAnswer;
+
+        // Delete answer handler
+        window.deleteAnswer = (answerId) => {
+            const answerElement = document.getElementById(answerId);
+            if (answerElement && answerElement.parentElement.children.length > 1) {
+                answerElement.remove();
+            } else {
+                alert('Each question must have at least one answer');
+            }
+        };
+
+        // Add answer button handler
+        document.getElementById('addAnswer').addEventListener('click', addAnswer);
+
+        // Fetch and display questions
+        async function fetchQuestions() {
+            try {
+                const savedQuestionsContainer = document.getElementById('savedQuestionsContainer');
+                savedQuestionsContainer.innerHTML = '<p>Loading questions...</p>';
+
+                const competition1 = document.getElementById('competition1').value;
+                const competition2 = document.getElementById('competition2').value;
+                const level = document.getElementById('level').value;
+
+                // Start with orderBy as the base query
+                let conditions = [orderBy('createdAt', 'desc')];
+
+                if (competition1) {
+                    conditions.push(where('competition1', '==', competition1));
+                }
+                if (competition2) {
+                    conditions.push(where('competition2', '==', competition2));
+                }
+                if (level) {
+                    conditions.push(where('level', '==', level));
+                }
+
+                const q = query(collection(db, 'questions'), ...conditions);
+
+                const querySnapshot = await getDocs(q);
+                let questionsHTML = '';
+
+                if (querySnapshot.empty) {
+                    savedQuestionsContainer.innerHTML = '<p>No questions found for the selected filters.</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const competitionNames = {
+                        '1': 'World',
+                        '2': 'Europe',
+                        '3': 'Asia',
+                        '4': 'Africa',
+                        '5': 'Latin America',
+                        '6': 'Egypt',
+                        '7': 'Spain',
+                        '8': 'England',
+                        '9': 'Italy',
+                        '10': 'Germany'
+                    };
+
+                    const levelNames = {
+                        '1': 'Easy',
+                        '2': 'Medium',
+                        '3': 'Hard'
+                    };
+
+                    const answersHTML = data.answers.map((answer, index) => `
+                        <div class="saved-answer ${index === data.correctAnswerIndex ? 'correct' : ''}">
+                            ${answer} ${index === data.correctAnswerIndex ? '✓' : ''}
+                        </div>
+                    `).join('');
+
+                    questionsHTML += `
+                        <div class="saved-question">
+                            <div class="question-meta">
+                                Competition: ${competitionNames[data.competition1]}${data.competition2 ? ' & ' + competitionNames[data.competition2] : ''} | 
+                                Level: ${levelNames[data.level]} | 
+                                Created: ${data.createdAt.toDate().toLocaleDateString()}
+                            </div>
+                            <h3>${data.question}</h3>
+                            <div class="saved-answers">
+                                ${answersHTML}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                savedQuestionsContainer.innerHTML = questionsHTML;
+            } catch (error) {
+                console.error('Error fetching questions:', error);
+                document.getElementById('savedQuestionsContainer').innerHTML = 
+                    '<p>Error loading questions. Please try again.</p>';
+            }
+        }
+
+        // Save question handler
+        document.getElementById('saveQuestion').addEventListener('click', async () => {
+            try {
+                // Get form values
+                const competition1 = document.getElementById('competition1').value;
+                const competition2 = document.getElementById('competition2').value;
+                const level = document.getElementById('level').value;
+                const questionText = document.getElementById('questionText').value;
+
+                // Get all answers
+                const answerGroups = document.querySelectorAll('.answer-group');
+                const answers = [];
+                let correctAnswerIndex = -1;
+
+                answerGroups.forEach((group, index) => {
+                    const answerText = group.querySelector('input[type="text"]').value;
+                    const isCorrect = group.querySelector('input[type="radio"]').checked;
+                    
+                    if (isCorrect) {
+                        correctAnswerIndex = index;
+                    }
+
+                    answers.push(answerText);
+                });
+
+                // Validate form
+                if (!competition1 || !level || !questionText || answers.length === 0 || correctAnswerIndex === -1) {
+                    alert('Please fill all fields and select a correct answer');
+                    return;
+                }
+
+                // Create question object
+                const questionData = {
+                    competition1,
+                    competition2,
+                    level,
+                    question: questionText,
+                    answers,
+                    correctAnswerIndex,
+                    createdAt: new Date()
+                };
+
+                // Save to Firestore
+                await addDoc(collection(db, 'questions'), questionData);
+
+                // Clear form
+                document.getElementById('questionForm').reset();
+                document.getElementById('answersContainer').innerHTML = '';
+                addAnswer(); // Add one empty answer
+
+                alert('Question saved successfully!');
+                fetchQuestions(); // Refresh the questions list
+            } catch (error) {
+                console.error('Error saving question:', error);
+                alert('Error saving question. Please try again.');
+            }
+        });
     </script>
 </body>
 </html>

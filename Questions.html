@@ -107,6 +107,21 @@
             margin-bottom: 15px;
             border-radius: 4px;
             border: 1px solid #ddd;
+            position: relative;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
         }
         .saved-question h3 {
             margin: 0 0 10px 0;
@@ -187,7 +202,7 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy, enableIndexedDbPersistence, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -304,6 +319,19 @@
         // Add answer button handler
         document.getElementById('addAnswer').addEventListener('click', addAnswer);
 
+        // Delete question function
+        async function deleteQuestion(questionId) {
+            if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+                try {
+                    await deleteDoc(doc(db, 'questions', questionId));
+                    fetchQuestions(); // Refresh the list after deletion
+                } catch (error) {
+                    console.error('Error deleting question:', error);
+                    alert('حدث خطأ أثناء حذف السؤال. يرجى المحاولة مرة أخرى.');
+                }
+            }
+        }
+
         // Fetch and display questions
         async function fetchQuestions() {
             try {
@@ -362,17 +390,21 @@
                         </div>
                     `).join('');
 
+                    const deleteButton = `<button onclick="deleteQuestion('${doc.id}')" class="delete-btn">حذف</button>`;
+
                     questionsHTML += `
                         <div class="saved-question">
-                            <div class="question-meta">
-                                Competition: ${competitionMap[data.competition1]}${data.competition2 ? ' & ' + competitionMap[data.competition2] : ''} | 
-                                Level: ${levelMap[data.level]} | 
-                                Created: ${data.createdAt.toDate().toLocaleDateString()} | 
-                                Last Modified: ${data.dateModified.toDate().toLocaleDateString()}
-                            </div>
-                            <h3>${data.question}</h3>
+                            ${deleteButton}
+                            <p><strong>${data.question}</strong></p>
                             <div class="saved-answers">
                                 ${answersHTML}
+                            </div>
+                            <div class="question-meta">
+                                <small>
+                                    ${competitionMap[data.competition1] || ''}
+                                    ${data.competition2 ? ` + ${competitionMap[data.competition2]}` : ''}
+                                    | ${levelMap[data.level]}
+                                </small>
                             </div>
                         </div>
                     `;

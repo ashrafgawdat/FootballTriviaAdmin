@@ -28,6 +28,13 @@
         .form-group {
             margin-bottom: 20px;
         }
+        .search-group .search-container {
+            display: flex;
+            gap: 10px;
+        }
+        .search-group input {
+            flex: 1;
+        }
         .competitions-container {
             display: flex;
             gap: 20px;
@@ -148,6 +155,13 @@
                     <select id="level" name="level" required>
                     </select>
                 </div>
+                <div class="form-group search-group">
+                    <label for="searchText">بحث:</label>
+                    <div class="search-container">
+                        <input type="text" id="searchText" placeholder="ابحث في الأسئلة والإجابات">
+                        <button type="button" class="btn btn-primary" id="searchButton">بحث</button>
+                    </div>
+                </div>
             </div>
 
             <div class="add-question-section">
@@ -243,10 +257,16 @@
         // Add first answer automatically when page loads
         addAnswer();
 
-        // Add change event listeners to filter controls
+        // Add event listeners
         document.getElementById('competition1').addEventListener('change', fetchQuestions);
         document.getElementById('competition2').addEventListener('change', fetchQuestions);
         document.getElementById('level').addEventListener('change', fetchQuestions);
+        document.getElementById('searchButton').addEventListener('click', fetchQuestions);
+        document.getElementById('searchText').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchQuestions();
+            }
+        });
 
         // Fetch questions on page load
         fetchQuestions();
@@ -302,6 +322,9 @@
                 const snapshot = await getDocs(q);
                 let filteredDocs = snapshot.docs;
 
+                // Get search text
+                const searchText = document.getElementById('searchText').value.toLowerCase();
+
                 // Apply filters in memory
                 if (competition1) {
                     filteredDocs = filteredDocs.filter(doc => doc.data().competition1 === competition1);
@@ -311,6 +334,16 @@
                 }
                 if (level) {
                     filteredDocs = filteredDocs.filter(doc => doc.data().level === level);
+                }
+                if (searchText) {
+                    filteredDocs = filteredDocs.filter(doc => {
+                        const data = doc.data();
+                        const questionMatch = data.question.toLowerCase().includes(searchText);
+                        const answersMatch = data.answers.some(answer => 
+                            answer.toLowerCase().includes(searchText)
+                        );
+                        return questionMatch || answersMatch;
+                    });
                 }
 
                 let questionsHTML = '';

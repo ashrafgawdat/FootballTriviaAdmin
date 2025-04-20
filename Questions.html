@@ -373,10 +373,20 @@
                 // Save to Firestore
                 await addDoc(collection(db, 'questions'), questionData);
 
-                // Clear form
-                document.getElementById('questionForm').reset();
+                // Store current filter values
+                const currentCompetition1 = document.getElementById('competition1').value;
+                const currentCompetition2 = document.getElementById('competition2').value;
+                const currentLevel = document.getElementById('level').value;
+
+                // Clear only the question and answers
+                document.getElementById('questionText').value = '';
                 document.getElementById('answersContainer').innerHTML = '';
                 addAnswer(); // Add one empty answer
+
+                // Restore filter values
+                document.getElementById('competition1').value = currentCompetition1;
+                document.getElementById('competition2').value = currentCompetition2;
+                document.getElementById('level').value = currentLevel;
 
                 fetchQuestions(); // Refresh the questions list
             } catch (error) {

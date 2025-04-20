@@ -146,7 +146,7 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -161,6 +161,15 @@
         // Initialize Firebase and Firestore
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
+        // Enable offline persistence
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
+            } else if (err.code == 'unimplemented') {
+                console.warn('The current browser does not support persistence.');
+            }
+        });
 
         // Define competitions and levels arrays
         const competitions = [
@@ -258,29 +267,32 @@
                 const level = document.getElementById('level').value;
 
                 // Start with orderBy as the base query
-                let conditions = [orderBy('dateModified', 'desc')];
+                // Create base query with sorting
+                let q = query(collection(db, 'questions'), orderBy('dateModified', 'desc'));
+                
+                // Get all documents and filter in memory
+                const snapshot = await getDocs(q);
+                let filteredDocs = snapshot.docs;
 
+                // Apply filters in memory
                 if (competition1) {
-                    conditions.push(where('competition1', '==', competition1));
+                    filteredDocs = filteredDocs.filter(doc => doc.data().competition1 === competition1);
                 }
                 if (competition2) {
-                    conditions.push(where('competition2', '==', competition2));
+                    filteredDocs = filteredDocs.filter(doc => doc.data().competition2 === competition2);
                 }
                 if (level) {
-                    conditions.push(where('level', '==', level));
+                    filteredDocs = filteredDocs.filter(doc => doc.data().level === level);
                 }
 
-                const q = query(collection(db, 'questions'), ...conditions);
-
-                const querySnapshot = await getDocs(q);
                 let questionsHTML = '';
 
-                if (querySnapshot.empty) {
+                if (filteredDocs.length === 0) {
                     savedQuestionsContainer.innerHTML = '<p>No questions found for the selected filters.</p>';
                     return;
                 }
 
-                querySnapshot.forEach((doc) => {
+                filteredDocs.forEach((doc) => {
                     const data = doc.data();
 
 
@@ -309,8 +321,9 @@
                 savedQuestionsContainer.innerHTML = questionsHTML;
             } catch (error) {
                 console.error('Error fetching questions:', error);
+                const errorMessage = error.message || 'Unknown error';
                 document.getElementById('savedQuestionsContainer').innerHTML = 
-                    '<p>Error loading questions. Please try again.</p>';
+                    `<p style="color: red;">Error loading questions: ${errorMessage}</p>`;
             }
         }
 
@@ -365,7 +378,6 @@
                 document.getElementById('answersContainer').innerHTML = '';
                 addAnswer(); // Add one empty answer
 
-                alert('Question saved successfully!');
                 fetchQuestions(); // Refresh the questions list
             } catch (error) {
                 console.error('Error saving question:', error);

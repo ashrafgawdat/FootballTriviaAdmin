@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Football Trivia Questions</title>
+    <title>أسئلة كرة القدم</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 1200px;
             margin: 20px auto;
             padding: 0 20px;
+            text-align: right;
+            direction: rtl;
         }
         .main-container {
             display: flex;
@@ -121,49 +123,49 @@
     </style>
 </head>
 <body>
-    <h1>Football Trivia Questions</h1>
+    <h1>أسئلة كرة القدم</h1>
     
     <form id="questionForm">
         <div class="main-container">
             <div class="filters-section">
-                <h3>Filters</h3>
+                <h3>التصفية</h3>
                 <div class="competitions-container">
                     <div class="competition-group">
-                        <label for="competition1">Competition 1:</label>
+                        <label for="competition1">المسابقة 1:</label>
                         <select id="competition1" name="competition1" required>
                         </select>
                     </div>
 
                     <div class="competition-group">
-                        <label for="competition2">Competition 2:</label>
+                        <label for="competition2">المسابقة 2:</label>
                         <select id="competition2" name="competition2">
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="level">Level:</label>
+                    <label for="level">المستوى:</label>
                     <select id="level" name="level" required>
                     </select>
                 </div>
             </div>
 
             <div class="add-question-section">
-                <h3>Add New Question</h3>
+                <h3>إضافة سؤال جديد</h3>
                 <div class="question-container">
                     <div class="form-group">
-                        <label for="questionText">Question:</label>
-                        <input type="text" id="questionText" required placeholder="Enter your question">
+                        <label for="questionText">السؤال:</label>
+                        <input type="text" id="questionText" required placeholder="أدخل سؤالك">
                     </div>
                     <div class="answers-container" id="answersContainer"></div>
-                    <button type="button" class="btn btn-success" id="addAnswer">Add Answer</button>
-                    <button type="button" class="btn btn-primary" id="saveQuestion">Save</button>
+                    <button type="button" class="btn btn-success" id="addAnswer">إضافة إجابة</button>
+                    <button type="button" class="btn btn-primary" id="saveQuestion">حفظ</button>
                 </div>
             </div>
         </div>
 
         <div class="saved-questions">
-            <h2>Saved Questions</h2>
+            <h2>الأسئلة المحفوظة</h2>
             <div id="savedQuestionsContainer"></div>
         </div>
     </form>
@@ -198,7 +200,7 @@
 
         // Define competitions and levels arrays
         const competitions = [
-            { id: '', name: 'Select Competition' },
+            { id: '', name: 'اختر المسابقة' },
             { id: '1', name: 'World' },
             { id: '2', name: 'Europe' },
             { id: '3', name: 'Asia' },
@@ -212,10 +214,10 @@
         ];
 
         const levels = [
-            { id: '', name: 'Select Level' },
-            { id: '1', name: 'Easy' },
-            { id: '2', name: 'Medium' },
-            { id: '3', name: 'Hard' }
+            { id: '', name: 'اختر المستوى' },
+            { id: '1', name: 'سهل' },
+            { id: '2', name: 'متوسط' },
+            { id: '3', name: 'صعب' }
         ];
 
         // Create a map for quick lookups
@@ -255,10 +257,11 @@
             const answerId = `answer-${answersContainer.children.length}`;
             
             const answerHTML = `
-                <div class="answer-group" id="${answerId}">
-                    <input type="radio" name="correct-answer" value="${answerId}" required>
-                    <input type="text" required placeholder="Enter answer">
-                    <button type="button" class="btn btn-danger" onclick="deleteAnswer('${answerId}')">Delete</button>
+                <div class="answer-group">
+                    <input type="text" class="answer-input" placeholder="أدخل الإجابة">
+                    <input type="radio" name="correctAnswer" class="correct-answer">
+                    <label>الإجابة الصحيحة</label>
+                    <button type="button" class="btn btn-danger remove-answer">حذف</button>
                 </div>
             `;
             
@@ -274,7 +277,7 @@
             if (answerElement && answerElement.parentElement.children.length > 1) {
                 answerElement.remove();
             } else {
-                alert('Each question must have at least one answer');
+                alert('يجب أن يكون لديك على الأقل إجابة واحدة');
             }
         };
 
@@ -285,7 +288,7 @@
         async function fetchQuestions() {
             try {
                 const savedQuestionsContainer = document.getElementById('savedQuestionsContainer');
-                savedQuestionsContainer.innerHTML = '<p>Loading questions...</p>';
+                savedQuestionsContainer.innerHTML = '<p>جاري تحميل الأسئلة...</p>';
 
                 const competition1 = document.getElementById('competition1').value;
                 const competition2 = document.getElementById('competition2').value;
@@ -313,13 +316,12 @@
                 let questionsHTML = '';
 
                 if (filteredDocs.length === 0) {
-                    savedQuestionsContainer.innerHTML = '<p>No questions found for the selected filters.</p>';
+                    savedQuestionsContainer.innerHTML = '<p>لم يتم العثور على أسئلة للتصفية المحددة.</p>';
                     return;
                 }
 
                 filteredDocs.forEach((doc) => {
                     const data = doc.data();
-
 
                     const answersHTML = data.answers.map((answer, index) => `
                         <div class="saved-answer ${index === data.correctAnswerIndex ? 'correct' : ''}">
@@ -348,7 +350,7 @@
                 console.error('Error fetching questions:', error);
                 const errorMessage = error.message || 'Unknown error';
                 document.getElementById('savedQuestionsContainer').innerHTML = 
-                    `<p style="color: red;">Error loading questions: ${errorMessage}</p>`;
+                    `<p style="color: red;">خطأ في تحميل الأسئلة: ${errorMessage}</p>`;
             }
         }
 
@@ -379,7 +381,7 @@
 
                 // Validate form
                 if (!competition1 || !level || !questionText || answers.length === 0 || correctAnswerIndex === -1) {
-                    alert('Please fill all fields and select a correct answer');
+                    alert('يرجى ملء جميع الحقول واختيار الإجابة الصحيحة');
                     return;
                 }
 
@@ -416,7 +418,7 @@
                 fetchQuestions(); // Refresh the questions list
             } catch (error) {
                 console.error('Error saving question:', error);
-                alert('Error saving question. Please try again.');
+                alert('خطأ في حفظ السؤال. يرجى المحاولة مرة أخرى.');
             }
         });
     </script>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Trivia Questions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Football Trivia Questions</h1>
+    
+    <form id="questionForm">
+        <div class="form-group">
+            <label for="competition">Competition:</label>
+            <select id="competition" name="competition" required>
+                <option value="">Select Competition</option>
+                <option value="1">World</option>
+                <option value="2">Europe</option>
+                <option value="3">Asia</option>
+                <option value="4">Africa</option>
+                <option value="5">Latin America</option>
+                <option value="6">Egypt</option>
+                <option value="7">Spain</option>
+                <option value="8">England</option>
+                <option value="9">Italy</option>
+                <option value="10">Germany</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="level">Level:</label>
+            <select id="level" name="level" required>
+                <option value="">Select Level</option>
+                <option value="1">Easy</option>
+                <option value="2">Medium</option>
+                <option value="3">Hard</option>
+            </select>
+        </div>
+    </form>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCdHkIFcCq7pmfWb9xT7qPquK6GwpuOUQ",
+            authDomain: "footballtrivia-24f59.firebaseapp.com",
+            projectId: "footballtrivia-24f59",
+            storageBucket: "footballtrivia-24f59.firebasestorage.app",
+            messagingSenderId: "807827295863",
+            appId: "1:807827295863:web:4d9ba6f0a5b77dcd954072"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+        // Form handling will be added later
+    </script>
+</body>
+</html>

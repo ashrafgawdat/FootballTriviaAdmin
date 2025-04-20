@@ -242,7 +242,7 @@
                 const level = document.getElementById('level').value;
 
                 // Start with orderBy as the base query
-                let conditions = [orderBy('createdAt', 'desc')];
+                let conditions = [orderBy('dateModified', 'desc')];
 
                 if (competition1) {
                     conditions.push(where('competition1', '==', competition1));
@@ -296,7 +296,8 @@
                             <div class="question-meta">
                                 Competition: ${competitionNames[data.competition1]}${data.competition2 ? ' & ' + competitionNames[data.competition2] : ''} | 
                                 Level: ${levelNames[data.level]} | 
-                                Created: ${data.createdAt.toDate().toLocaleDateString()}
+                                Created: ${data.createdAt.toDate().toLocaleDateString()} | 
+                                Last Modified: ${data.dateModified.toDate().toLocaleDateString()}
                             </div>
                             <h3>${data.question}</h3>
                             <div class="saved-answers">
@@ -353,7 +354,8 @@
                     question: questionText,
                     answers,
                     correctAnswerIndex,
-                    createdAt: new Date()
+                    createdAt: new Date(),
+                    dateModified: new Date()
                 };
 
                 // Save to Firestore

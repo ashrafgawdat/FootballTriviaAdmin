@@ -111,34 +111,12 @@
             <div class="competition-group">
                 <label for="competition1">Competition 1:</label>
                 <select id="competition1" name="competition1" required>
-                    <option value="">Select Competition</option>
-                    <option value="1">World</option>
-                    <option value="2">Europe</option>
-                    <option value="3">Asia</option>
-                    <option value="4">Africa</option>
-                    <option value="5">Latin America</option>
-                    <option value="6">Egypt</option>
-                    <option value="7">Spain</option>
-                    <option value="8">England</option>
-                    <option value="9">Italy</option>
-                    <option value="10">Germany</option>
                 </select>
             </div>
 
             <div class="competition-group">
                 <label for="competition2">Competition 2:</label>
                 <select id="competition2" name="competition2">
-                    <option value="">Select Competition</option>
-                    <option value="1">World</option>
-                    <option value="2">Europe</option>
-                    <option value="3">Asia</option>
-                    <option value="4">Africa</option>
-                    <option value="5">Latin America</option>
-                    <option value="6">Egypt</option>
-                    <option value="7">Spain</option>
-                    <option value="8">England</option>
-                    <option value="9">Italy</option>
-                    <option value="10">Germany</option>
                 </select>
             </div>
         </div>
@@ -146,10 +124,6 @@
         <div class="form-group">
             <label for="level">Level:</label>
             <select id="level" name="level" required>
-                <option value="">Select Level</option>
-                <option value="1">Easy</option>
-                <option value="2">Medium</option>
-                <option value="3">Hard</option>
             </select>
         </div>
 
@@ -187,6 +161,48 @@
         // Initialize Firebase and Firestore
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
+        // Define competitions and levels arrays
+        const competitions = [
+            { id: '', name: 'Select Competition' },
+            { id: '1', name: 'World' },
+            { id: '2', name: 'Europe' },
+            { id: '3', name: 'Asia' },
+            { id: '4', name: 'Africa' },
+            { id: '5', name: 'Latin America' },
+            { id: '6', name: 'Egypt' },
+            { id: '7', name: 'Spain' },
+            { id: '8', name: 'England' },
+            { id: '9', name: 'Italy' },
+            { id: '10', name: 'Germany' }
+        ];
+
+        const levels = [
+            { id: '', name: 'Select Level' },
+            { id: '1', name: 'Easy' },
+            { id: '2', name: 'Medium' },
+            { id: '3', name: 'Hard' }
+        ];
+
+        // Create a map for quick lookups
+        const competitionMap = Object.fromEntries(competitions.map(c => [c.id, c.name]));
+        const levelMap = Object.fromEntries(levels.map(l => [l.id, l.name]));
+
+        // Populate select elements
+        function populateSelect(selectId, options) {
+            const select = document.getElementById(selectId);
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.id;
+                optionElement.textContent = option.name;
+                select.appendChild(optionElement);
+            });
+        }
+
+        // Populate all select elements
+        populateSelect('competition1', competitions);
+        populateSelect('competition2', competitions);
+        populateSelect('level', levels);
 
         // Add first answer automatically when page loads
         addAnswer();
@@ -266,24 +282,7 @@
 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    const competitionNames = {
-                        '1': 'World',
-                        '2': 'Europe',
-                        '3': 'Asia',
-                        '4': 'Africa',
-                        '5': 'Latin America',
-                        '6': 'Egypt',
-                        '7': 'Spain',
-                        '8': 'England',
-                        '9': 'Italy',
-                        '10': 'Germany'
-                    };
 
-                    const levelNames = {
-                        '1': 'Easy',
-                        '2': 'Medium',
-                        '3': 'Hard'
-                    };
 
                     const answersHTML = data.answers.map((answer, index) => `
                         <div class="saved-answer ${index === data.correctAnswerIndex ? 'correct' : ''}">
@@ -294,8 +293,8 @@
                     questionsHTML += `
                         <div class="saved-question">
                             <div class="question-meta">
-                                Competition: ${competitionNames[data.competition1]}${data.competition2 ? ' & ' + competitionNames[data.competition2] : ''} | 
-                                Level: ${levelNames[data.level]} | 
+                                Competition: ${competitionMap[data.competition1]}${data.competition2 ? ' & ' + competitionMap[data.competition2] : ''} | 
+                                Level: ${levelMap[data.level]} | 
                                 Created: ${data.createdAt.toDate().toLocaleDateString()} | 
                                 Last Modified: ${data.dateModified.toDate().toLocaleDateString()}
                             </div>

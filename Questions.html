@@ -154,7 +154,7 @@
                 <div class="competitions-container">
                     <div class="competition-group">
                         <label for="competition1">المسابقة 1:</label>
-                        <select id="competition1" name="competition1" required>
+                        <select id="competition1" name="competition1">
                         </select>
                     </div>
 
@@ -167,7 +167,7 @@
 
                 <div class="form-group">
                     <label for="level">المستوى:</label>
-                    <select id="level" name="level" required>
+                    <select id="level" name="level">
                     </select>
                 </div>
                 <div class="form-group search-group">
@@ -184,7 +184,7 @@
                 <div class="question-container">
                     <div class="form-group">
                         <label for="questionText">السؤال:</label>
-                        <input type="text" id="questionText" required placeholder="أدخل سؤالك">
+                        <input type="text" id="questionText" placeholder="أدخل سؤالك">
                     </div>
                     <div class="answers-container" id="answersContainer"></div>
                     <button type="button" class="btn btn-success" id="addAnswer">إضافة إجابة</button>
@@ -455,8 +455,24 @@
                 });
 
                 // Validate form
-                if (!competition1 || !level || !questionText || answers.length === 0 || correctAnswerIndex === -1) {
-                    alert('يرجى ملء جميع الحقول واختيار الإجابة الصحيحة');
+                if (!questionText.trim()) {
+                    alert('يرجى إدخال السؤال');
+                    return;
+                }
+                if (!competition1) {
+                    alert('يرجى اختيار المسابقة');
+                    return;
+                }
+                if (!level) {
+                    alert('يرجى اختيار المستوى');
+                    return;
+                }
+                if (answers.length < 2) {
+                    alert('يجب إضافة إجابتين على الأقل');
+                    return;
+                }
+                if (correctAnswerIndex === -1) {
+                    alert('يرجى اختيار الإجابة الصحيحة');
                     return;
                 }
 

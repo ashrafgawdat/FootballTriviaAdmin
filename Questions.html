@@ -289,14 +289,13 @@
         // Add answer handler
         function addAnswer() {
             const answersContainer = document.getElementById('answersContainer');
-            const answerId = `answer-${answersContainer.children.length}`;
-            
+            const answerId = `answer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             const answerHTML = `
-                <div class="answer-group">
+                <div class="answer-group" id="${answerId}">
                     <input type="text" class="answer-input" placeholder="أدخل الإجابة">
                     <input type="radio" name="correctAnswer" class="correct-answer">
                     <label>الإجابة الصحيحة</label>
-                    <button type="button" class="btn btn-danger remove-answer">حذف</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteAnswer('${answerId}')">حذف</button>
                 </div>
             `;
             
@@ -308,8 +307,9 @@
 
         // Delete answer handler
         window.deleteAnswer = (answerId) => {
+            const answersContainer = document.getElementById('answersContainer');
             const answerElement = document.getElementById(answerId);
-            if (answerElement && answerElement.parentElement.children.length > 1) {
+            if (answerElement && answersContainer.children.length > 1) {
                 answerElement.remove();
             } else {
                 alert('يجب أن يكون لديك على الأقل إجابة واحدة');

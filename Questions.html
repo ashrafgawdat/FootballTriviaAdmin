@@ -314,8 +314,17 @@
             answersContainer.insertAdjacentHTML('beforeend', answerHTML);
         };
 
+        // Initialize competitions and levels
+        initializeSelects();
+
+        // Initialize the form with one empty answer
+        window.addAnswer();
+
         // Add click handler for the Add Answer button
         document.getElementById('addAnswer').addEventListener('click', () => window.addAnswer());
+
+        // Fetch existing questions
+        fetchQuestions();
 
         // Delete answer handler
         window.deleteAnswer = (answerId) => {

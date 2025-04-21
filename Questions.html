@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>أسئلة كرة القدم</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Google Sign-in button styles -->
+    <meta name="google-signin-client_id" content="807827295863-6e8vu5sab0jk1hnk0vn6vvt8qbcn5vqq.apps.googleusercontent.com">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -178,65 +187,122 @@
             color: #666;
             text-align: right;
         }
+        .auth-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .google-btn {
+            background-color: #fff;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .google-icon-wrapper {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+        .btn-text {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .logout-btn {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .user-info {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    
-    <form id="questionForm" onsubmit="return false;">
-        <div class="main-container">
-            <div class="filters-section">
-                <div class="competitions-container">
-                    <div class="competition-group">
-                        <label for="competition1">المسابقة 1:</label>
-                        <select id="competition1" name="competition1">
-                        </select>
+    <div class="container">
+        <!-- Authentication Section -->
+        <div class="auth-section" id="authSection">
+            <h2>تسجيل الدخول</h2>
+            <div id="loginButton">
+                <button class="google-btn" onclick="signInWithGoogle()">
+                    <div class="google-icon-wrapper">
+                        <img class="google-icon" src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"/>
                     </div>
-
-                    <div class="competition-group">
-                        <label for="competition2">المسابقة 2:</label>
-                        <select id="competition2" name="competition2">
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="level">المستوى:</label>
-                    <select id="level" name="level">
-                    </select>
-                </div>
-                <div class="form-group search-group">
-                    <label for="searchText">بحث:</label>
-                    <div class="search-container">
-                        <input type="text" id="searchText" placeholder="ابحث في الأسئلة والإجابات">
-                        <button type="button" class="btn btn-primary" id="searchButton">بحث</button>
-                    </div>
-                </div>
+                    <span class="btn-text">تسجيل الدخول بحساب Google</span>
+                </button>
             </div>
-
-            <div class="add-question-section">
-                <div class="question-container">
-                    <div class="form-group">
-                        <label for="questionText">السؤال:</label>
-                        <input type="text" id="questionText" placeholder="أدخل سؤالك">
-                    </div>
-                    <div class="answers-container" id="answersContainer"></div>
-                    <button type="button" class="btn btn-success" id="addAnswer">إضافة إجابة</button>
-                    <button type="button" class="btn btn-primary" id="saveQuestion">حفظ</button>
-                    <button type="button" class="btn btn-secondary" id="cancelEdit" style="display: none;" onclick="window.cancelEdit()">إلغاء</button>
-                </div>
+            <div id="userInfo" style="display: none;" class="user-info">
+                مرحباً <span id="userName"></span>
+                <button class="logout-btn" onclick="signOut()">تسجيل الخروج</button>
             </div>
         </div>
 
-        <div class="saved-questions">
-            <div id="questionsCount" class="questions-count"></div>
-            <div id="savedQuestionsContainer"></div>
+        <!-- Main Content (will be shown after authentication) -->
+        <div class="main-content" id="mainContent">
+            <form id="questionForm" onsubmit="return false;">
+                <div class="main-container">
+                    <div class="filters-section">
+                        <div class="competitions-container">
+                            <div class="competition-group">
+                                <label for="competition1">المسابقة 1:</label>
+                                <select id="competition1" name="competition1">
+                                </select>
+                            </div>
+
+                            <div class="competition-group">
+                                <label for="competition2">المسابقة 2:</label>
+                                <select id="competition2" name="competition2">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="level">المستوى:</label>
+                            <select id="level" name="level">
+                            </select>
+                        </div>
+                        <div class="form-group search-group">
+                            <label for="searchText">بحث:</label>
+                            <div class="search-container">
+                                <input type="text" id="searchText" placeholder="ابحث في الأسئلة والإجابات">
+                                <button type="button" class="btn btn-primary" id="searchButton">بحث</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="add-question-section">
+                        <div class="question-container">
+                            <div class="form-group">
+                                <label for="questionText">السؤال:</label>
+                                <input type="text" id="questionText" placeholder="أدخل سؤالك">
+                            </div>
+                            <div class="answers-container" id="answersContainer"></div>
+                            <button type="button" class="btn btn-success" id="addAnswer">إضافة إجابة</button>
+                            <button type="button" class="btn btn-primary" id="saveQuestion">حفظ</button>
+                            <button type="button" class="btn btn-secondary" id="cancelEdit" style="display: none;" onclick="window.cancelEdit()">إلغاء</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="saved-questions">
+                    <div id="questionsCount" class="questions-count"></div>
+                    <div id="savedQuestionsContainer"></div>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     <script type="module">
         // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy, enableIndexedDbPersistence, deleteDoc, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, updateDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -251,6 +317,51 @@
         // Initialize Firebase and global state
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Auth state observer
+        onAuthStateChanged(auth, function(user) {
+            const mainContent = document.getElementById('mainContent');
+            const loginButton = document.getElementById('loginButton');
+            const userInfo = document.getElementById('userInfo');
+            const userName = document.getElementById('userName');
+
+            if (user) {
+                // User is signed in
+                mainContent.classList.add('authenticated');
+                loginButton.style.display = 'none';
+                userInfo.style.display = 'block';
+                userName.textContent = user.displayName || user.email;
+                fetchQuestions(); // Load questions after authentication
+            } else {
+                // User is signed out
+                mainContent.classList.remove('authenticated');
+                loginButton.style.display = 'block';
+                userInfo.style.display = 'none';
+                userName.textContent = '';
+            }
+        });
+
+        // Sign in with Google
+        window.signInWithGoogle = async function() {
+            try {
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error('Error signing in with Google:', error);
+                alert('Error signing in with Google: ' + error.message);
+            }
+        };
+
+        // Sign out
+        window.signOut = async function() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error('Error signing out:', error);
+                alert('Error signing out: ' + error.message);
+            }
+        };
         const state = {
             currentEditingId: null
         };

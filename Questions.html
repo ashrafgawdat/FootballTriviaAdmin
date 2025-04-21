@@ -359,9 +359,6 @@
         populateSelect(document.getElementById('competition2'), competitions);
         populateSelect(document.getElementById('level'), levels);
 
-        // Add first answer automatically when page loads
-        addAnswer();
-
         // Add event listeners
         document.getElementById('competition1').addEventListener('change', fetchQuestions);
         document.getElementById('competition2').addEventListener('change', fetchQuestions);
@@ -377,10 +374,10 @@
         fetchQuestions();
 
         // Add answer handler
-        function addAnswer(answerText = '', isCorrect = false) {
+        function createAnswer(text = '', isCorrect = false) {
             const answersContainer = document.getElementById('answersContainer');
             const answerId = `answer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const escapedAnswerText = String(answerText || '').replace(/"/g, '&quot;');
+            const escapedAnswerText = String(text).replace(/"/g, '&quot;');
             const answerHTML = `
                 <div class="answer-group" id="${answerId}">
                     <input type="text" class="answer-input" placeholder="أدخل الإجابة" value="${escapedAnswerText}">
@@ -399,11 +396,14 @@
                 // Initialize competitions and levels
                 window.initializeSelects();
 
-                // Add click handler for the Add Answer button
-                document.getElementById('addAnswer').addEventListener('click', () => window.addAnswer());
-
                 // Initialize the form with one empty answer
-                window.addAnswer();
+                createAnswer();
+
+                // Add click handler for Add Answer button
+                document.getElementById('addAnswer').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    createAnswer();
+                });
 
                 // Fetch existing questions
                 fetchQuestions();

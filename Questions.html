@@ -485,7 +485,7 @@
         fetchQuestions();
 
         // Add answer handler
-        function createAnswer(text = '', isCorrect = false) {
+        function addAnswer(text = '', isCorrect = false) {
             const answersContainer = document.getElementById('answersContainer');
             const answerId = `answer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             const escapedAnswerText = String(text).replace(/"/g, '&quot;');
@@ -501,6 +501,103 @@
             answersContainer.insertAdjacentHTML('beforeend', answerHTML);
         }
 
+        // Save question handler
+        document.getElementById('saveQuestion').addEventListener('click', async () => {
+            try {
+                // Check if user is authenticated
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('يجب تسجيل الدخول لحفظ السؤال');
+                    return;
+                }
+
+                // Get form values
+                const competition1 = document.getElementById('competition1').value;
+                const competition2 = document.getElementById('competition2').value;
+                const level = document.getElementById('level').value;
+                const questionText = document.getElementById('questionText').value;
+
+                // Get answers
+                const answerElements = document.querySelectorAll('.answer-group');
+                const answers = Array.from(answerElements).map(div => div.querySelector('input.answer-input').value.trim());
+                const correctAnswerIndex = Array.from(document.querySelectorAll('.correct-answer')).findIndex(radio => radio.checked);
+
+                // Validate form
+                if (!questionText.trim()) {
+                    alert('يرجى إدخال السؤال');
+                    return;
+                }
+                if (!competition1) {
+                    alert('يرجى اختيار المسابقة');
+                    return;
+                }
+                if (!level) {
+                    alert('يرجى اختيار المستوى');
+                    return;
+                }
+                if (answers.length < 2) {
+                    alert('يجب إضافة إجابتين على الأقل');
+                    return;
+                }
+                if (correctAnswerIndex === -1) {
+                    alert('يرجى اختيار الإجابة الصحيحة');
+                    return;
+                }
+
+                // Prepare question data
+                const questionData = {
+                    competition1,
+                    competition2,
+                    level,
+                    question: questionText,
+                    answers,
+                    correctAnswerIndex,
+                    dateModified: new Date(),
+                    userId: user.uid,
+                    userEmail: user.email,
+                    userName: user.displayName || user.email
+                };
+
+                if (!state.currentEditingId) {
+                    // Add createdAt and status for new questions
+                    questionData.createdAt = new Date();
+                    questionData.status = 1;
+                }
+
+                try {
+                    if (state.currentEditingId) {
+                        // Update existing question
+                        await updateDoc(doc(db, 'questions', state.currentEditingId), questionData);
+                    } else {
+                        // Add new question
+                        await addDoc(collection(db, 'questions'), questionData);
+                    }
+
+                    // Reset form
+                    document.getElementById('questionText').value = '';
+                    document.getElementById('competition1').value = '';
+                    document.getElementById('competition2').value = '';
+                    document.getElementById('level').value = '';
+                    document.getElementById('answersContainer').innerHTML = '';
+                    addAnswer(); // Add one empty answer
+                    state.currentEditingId = null;
+
+                    // Update UI
+                    document.getElementById('saveQuestion').textContent = 'حفظ';
+                    document.getElementById('cancelEdit').style.display = 'none';
+
+                    // Refresh questions list
+                    fetchQuestions();
+                } catch (error) {
+                    console.error('Error saving question:', error);
+                    alert('Error saving question: ' + error.message);
+                }
+            } catch (error) {
+                console.error('Error in save handler:', error);
+                alert('Error: ' + error.message);
+            }
+        });
+
         // Wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', () => {
             try {
@@ -508,12 +605,12 @@
                 window.initializeSelects();
 
                 // Initialize the form with one empty answer
-                createAnswer();
+                addAnswer();
 
                 // Add click handler for Add Answer button
-                document.getElementById('addAnswer').addEventListener('click', (e) => {
+                document.getElementById('addAnswer').addEventListener('click', function(e) {
                     e.preventDefault();
-                    createAnswer();
+                    addAnswer('', false);
                 });
 
                 // Fetch existing questions
@@ -533,9 +630,6 @@
                 alert('يجب أن يكون لديك على الأقل إجابة واحدة');
             }
         };
-
-        // Add answer button handler
-        document.getElementById('addAnswer').addEventListener('click', addAnswer);
 
         // Delete question function
         window.deleteQuestion = async function(questionId) {
@@ -638,6 +732,7 @@
                                 ${data.competition2 ? `/ ${competitionMap[data.competition2]}` : ''}
                                 | المستوى: ${levelMap[data.level] || ''}
                                 | تاريخ التعديل: ${new Date(data.dateModified.seconds * 1000).toLocaleString('ar-EG')}
+                                | بواسطة: ${data.userName || data.userEmail || 'غير معروف'}
                             </div>
                         </div>
                     `;

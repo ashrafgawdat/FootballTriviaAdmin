@@ -63,6 +63,24 @@
         .answer-group input[type="text"] {
             flex-grow: 1;
         }
+        .action-buttons button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        .edit-btn {
+            background-color: #ffc107;
+        }
+        .copy-btn {
+            background-color: #17a2b8;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+        }
         .btn {
             padding: 8px 16px;
             border: none;
@@ -265,6 +283,12 @@
 
         // Make functions globally accessible
         window.initializeSelects = initializeSelects;
+        window.editQuestion = editQuestion;
+        window.deleteQuestion = deleteQuestion;
+        window.addAnswer = addAnswer;
+        window.deleteAnswer = deleteAnswer;
+        window.cancelEdit = cancelEdit;
+        window.copyQuestion = copyQuestion;
 
         // Define competitions array
         const competitions = [
@@ -342,8 +366,6 @@
             
             answersContainer.insertAdjacentHTML('beforeend', answerHTML);
         }
-        // Make functions globally accessible
-        window.addAnswer = addAnswer;
 
         // Wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', () => {
@@ -464,6 +486,7 @@
                     const actionButtons = `
                         <div class="action-buttons">
                             <button type="button" onclick="editQuestion('${doc.id}')" class="edit-btn">تعديل</button>
+                            <button type="button" onclick="copyQuestion('${doc.id}')" class="copy-btn">نسخ</button>
                             <button type="button" onclick="deleteQuestion('${doc.id}')" class="delete-btn">حذف</button>
                         </div>
                     `;
@@ -531,26 +554,57 @@
         };
 
         // Cancel edit handler
-        window.cancelEdit = () => {
+        function cancelEdit() {
+            currentEditingId = null;
+            document.getElementById('questionText').value = '';
+            document.getElementById('competition1').value = '';
+            document.getElementById('competition2').value = '';
+            document.getElementById('level').value = '';
+            document.getElementById('answersContainer').innerHTML = '';
+            document.getElementById('cancelEdit').style.display = 'none';
+            document.getElementById('saveQuestion').textContent = 'حفظ';
+        }
+
+        // Function to copy question data to form
+        async function copyQuestion(questionId) {
             try {
-                // Clear form fields
-                document.getElementById('questionText').value = '';
-                document.getElementById('competition1').value = '';
-                document.getElementById('competition2').value = '';
-                document.getElementById('level').value = '';
+                const docRef = doc(db, 'questions', questionId);
+                const docSnap = await getDoc(docRef);
 
-                // Reset answers
-                document.getElementById('answersContainer').innerHTML = '';
-                addAnswer(); // Add one empty answer
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
 
-                // Reset UI
-                document.getElementById('saveQuestion').textContent = 'حفظ';
-                document.getElementById('cancelEdit').style.display = 'none';
-                currentEditingId = null;
+                    // Reset the form first
+                    cancelEdit();
+
+                    // Fill form with question data
+                    document.getElementById('questionText').value = data.question;
+                    document.getElementById('competition1').value = data.competition1;
+                    document.getElementById('competition2').value = data.competition2 || '';
+                    document.getElementById('level').value = data.level;
+
+                    // Add answers
+                    const answersContainer = document.getElementById('answersContainer');
+                    answersContainer.innerHTML = '';
+                    data.answers.forEach((answer, index) => {
+                        const answerDiv = document.createElement('div');
+                        answerDiv.className = 'answer-input';
+                        answerDiv.innerHTML = `
+                            <input type="text" value="${answer}">
+                            <input type="radio" name="correctAnswer" ${index === data.correctAnswerIndex ? 'checked' : ''}>
+                            <button type="button" class="btn btn-danger" onclick="deleteAnswer(this)">حذف</button>
+                        `;
+                        answersContainer.appendChild(answerDiv);
+                    });
+
+                    // Scroll to the form
+                    document.querySelector('.add-question-section').scrollIntoView({ behavior: 'smooth' });
+                }
             } catch (error) {
-                console.error('Error in cancelEdit:', error);
+                console.error('Error copying question:', error);
+                alert('Error copying question: ' + error.message);
             }
-        };
+        }
 
         // Save question handler
         document.getElementById('saveQuestion').addEventListener('click', async () => {

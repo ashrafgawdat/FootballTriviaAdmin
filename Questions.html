@@ -22,6 +22,12 @@
             text-align: right;
             direction: rtl;
         }
+        .main-content {
+            display: none;
+        }
+        .main-content.authenticated {
+            display: block;
+        }
         .main-container {
             display: flex;
             gap: 20px;
@@ -191,13 +197,41 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        .google-btn {
-            background-color: #fff;
-            color: #000;
-            border: none;
+        .auth-section {
+            text-align: left;
             padding: 10px 20px;
-            border-radius: 5px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .auth-section.not-authenticated {
+            text-align: center;
+            padding: 50px;
+            margin: 50px auto;
+            max-width: 400px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: none;
+        }
+        .auth-section h2 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .google-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 auto;
+        }
+        .google-btn:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: #f8f9fa;
         }
         .google-icon-wrapper {
             display: inline-block;
@@ -211,6 +245,12 @@
             font-size: 16px;
             font-weight: bold;
         }
+        .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
         .logout-btn {
             background-color: #dc3545;
             color: #fff;
@@ -218,17 +258,18 @@
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        .user-info {
-            margin-top: 10px;
+        .logout-btn:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Authentication Section -->
-        <div class="auth-section" id="authSection">
-            <h2>تسجيل الدخول</h2>
+            <!-- Authentication Section -->
+        <div class="auth-section not-authenticated" id="authSection">
+            <h2 id="loginTitle">تسجيل الدخول</h2>
             <div id="loginButton">
                 <button class="google-btn" onclick="signInWithGoogle()">
                     <div class="google-icon-wrapper">
@@ -244,7 +285,7 @@
         </div>
 
         <!-- Main Content (will be shown after authentication) -->
-        <div class="main-content" id="mainContent">
+        <div class="main-content" id="mainContent" style="display: none;">
             <form id="questionForm" onsubmit="return false;">
                 <div class="main-container">
                     <div class="filters-section">
@@ -302,7 +343,7 @@
         // Import the functions you need from the SDKs you need
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, updateDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -325,18 +366,26 @@
             const loginButton = document.getElementById('loginButton');
             const userInfo = document.getElementById('userInfo');
             const userName = document.getElementById('userName');
+            const authSection = document.getElementById('authSection');
+            const loginTitle = document.getElementById('loginTitle');
 
             if (user) {
                 // User is signed in
-                mainContent.classList.add('authenticated');
+                mainContent.style.display = 'block';
+                authSection.style.display = 'block';
+                authSection.classList.remove('not-authenticated');
                 loginButton.style.display = 'none';
+                loginTitle.style.display = 'none';
                 userInfo.style.display = 'block';
                 userName.textContent = user.displayName || user.email;
                 fetchQuestions(); // Load questions after authentication
             } else {
                 // User is signed out
-                mainContent.classList.remove('authenticated');
+                mainContent.style.display = 'none';
+                authSection.style.display = 'block';
+                authSection.classList.add('not-authenticated');
                 loginButton.style.display = 'block';
+                loginTitle.style.display = 'block';
                 userInfo.style.display = 'none';
                 userName.textContent = '';
             }
@@ -357,6 +406,9 @@
         window.signOut = async function() {
             try {
                 await signOut(auth);
+                // Clear any cached data
+                document.getElementById('savedQuestionsContainer').innerHTML = '';
+                document.getElementById('questionsCount').textContent = '';
             } catch (error) {
                 console.error('Error signing out:', error);
                 alert('Error signing out: ' + error.message);

@@ -298,7 +298,7 @@
         fetchQuestions();
 
         // Add answer handler
-        window.addAnswer = function(answerText = '', isCorrect = false) {
+        function addAnswer(answerText = '', isCorrect = false) {
             const answersContainer = document.getElementById('answersContainer');
             const answerId = `answer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             const escapedAnswerText = answerText.replace(/"/g, '&quot;');
@@ -307,24 +307,29 @@
                     <input type="text" class="answer-input" placeholder="أدخل الإجابة" value="${escapedAnswerText}">
                     <input type="radio" name="correctAnswer" class="correct-answer" ${isCorrect ? 'checked' : ''}>
                     <label>الإجابة الصحيحة</label>
-                    <button type="button" class="btn btn-danger" onclick="deleteAnswer('${answerId}')">حذف</button>
+                    <button type="button" class="btn btn-danger" onclick="window.deleteAnswer('${answerId}')">حذف</button>
                 </div>
             `;
             
             answersContainer.insertAdjacentHTML('beforeend', answerHTML);
-        };
+        }
+        // Make functions globally accessible
+        window.addAnswer = addAnswer;
 
-        // Initialize competitions and levels
-        initializeSelects();
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize competitions and levels
+            initializeSelects();
 
-        // Initialize the form with one empty answer
-        window.addAnswer();
+            // Add click handler for the Add Answer button
+            document.getElementById('addAnswer').addEventListener('click', () => window.addAnswer());
 
-        // Add click handler for the Add Answer button
-        document.getElementById('addAnswer').addEventListener('click', () => window.addAnswer());
+            // Initialize the form with one empty answer
+            window.addAnswer();
 
-        // Fetch existing questions
-        fetchQuestions();
+            // Fetch existing questions
+            fetchQuestions();
+        });
 
         // Delete answer handler
         window.deleteAnswer = (answerId) => {

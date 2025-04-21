@@ -262,6 +262,51 @@
                 .join('');
         }
 
+        // Function to delete an answer
+        function deleteAnswer(answerId) {
+            const answerElement = document.getElementById(answerId);
+            if (answerElement) {
+                answerElement.remove();
+            }
+        }
+
+        // Function to edit a question
+        async function editQuestion(questionId) {
+            try {
+                const docRef = doc(db, 'questions', questionId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    state.currentEditingId = questionId;
+
+                    // Fill form with question data
+                    document.getElementById('questionText').value = data.question;
+                    document.getElementById('competition1').value = data.competition1;
+                    document.getElementById('competition2').value = data.competition2 || '';
+                    document.getElementById('level').value = data.level;
+
+                    // Clear existing answers
+                    document.getElementById('answersContainer').innerHTML = '';
+
+                    // Add answers
+                    data.answers.forEach((answer, index) => {
+                        addAnswer(answer, index === data.correctAnswerIndex);
+                    });
+
+                    // Update UI for edit mode
+                    document.getElementById('saveQuestion').textContent = 'حفظ التعديلات';
+                    document.getElementById('cancelEdit').style.display = 'inline-block';
+
+                    // Scroll to form
+                    document.querySelector('.add-question-section').scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Error editing question:', error);
+                alert('Error editing question: ' + error.message);
+            }
+        }
+
         // Initialize select dropdowns
         function initializeSelects() {
             const competition1Select = document.getElementById('competition1');

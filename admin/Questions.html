@@ -694,8 +694,8 @@
         // Edit question handler
         window.editQuestion = async (questionId) => {
             try {
-                const questionDoc = await getDoc(doc(db, 'questions', questionId));
-                if (questionDoc.exists()) {
+                const questionDoc = await db.collection('questions').doc(questionId).get();
+                if (questionDoc.exists) {
                     const data = questionDoc.data();
                     
                     // Load data into form
@@ -722,7 +722,7 @@
                 }
             } catch (error) {
                 console.error('Error editing question:', error);
-                alert('Error editing question: ' + error.message);
+                alert('حدث خطأ أثناء تحرير السؤال');
             }
         }
 

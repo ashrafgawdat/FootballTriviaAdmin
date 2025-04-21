@@ -553,101 +553,6 @@
             answersContainer.insertAdjacentHTML('beforeend', answerHTML);
         }
 
-        // Save question handler
-        document.getElementById('saveQuestion').addEventListener('click', async () => {
-            try {
-                // Check if user is authenticated
-                const user = auth.currentUser;
-                if (!user) {
-                    alert('يجب تسجيل الدخول لحفظ السؤال');
-                    return;
-                }
-
-                // Get form values
-                const competition1 = document.getElementById('competition1').value;
-                const competition2 = document.getElementById('competition2').value;
-                const level = document.getElementById('level').value;
-                const questionText = document.getElementById('questionText').value;
-
-                // Get answers
-                const answerElements = document.querySelectorAll('.answer-group');
-                const answers = Array.from(answerElements).map(div => div.querySelector('input.answer-input').value.trim());
-                const correctAnswerIndex = Array.from(document.querySelectorAll('.correct-answer')).findIndex(radio => radio.checked);
-
-                // Validate form
-                if (!questionText.trim()) {
-                    alert('يرجى إدخال السؤال');
-                    return;
-                }
-                if (!competition1) {
-                    alert('يرجى اختيار المسابقة');
-                    return;
-                }
-                if (!level) {
-                    alert('يرجى اختيار المستوى');
-                    return;
-                }
-                if (answers.length < 2) {
-                    alert('يجب إضافة إجابتين على الأقل');
-                    return;
-                }
-                if (correctAnswerIndex === -1) {
-                    alert('يرجى اختيار الإجابة الصحيحة');
-                    return;
-                }
-
-                // Prepare question data
-                const questionData = {
-                    competition1,
-                    competition2,
-                    level,
-                    question: questionText,
-                    answers,
-                    correctAnswerIndex,
-                    dateModified: new Date(),
-                    userId: user.uid,
-                    userEmail: user.email,
-                    userName: user.displayName || user.email
-                };
-
-                if (!state.currentEditingId) {
-                    // Add createdAt and status for new questions
-                    questionData.createdAt = new Date();
-                    questionData.status = 1;
-                }
-
-                try {
-                    if (state.currentEditingId) {
-                        // Update existing question
-                        await updateDoc(doc(db, 'questions', state.currentEditingId), questionData);
-                    } else {
-                        // Add new question
-                        await addDoc(collection(db, 'questions'), questionData);
-                    }
-
-                    // Reset question form but keep filters
-                    document.getElementById('questionText').value = '';
-                    document.getElementById('answersContainer').innerHTML = '';
-                    addAnswer(); // Add one empty answer
-                    state.currentEditingId = null;
-
-                    // Update UI
-                    document.getElementById('saveQuestion').textContent = 'حفظ';
-                    document.getElementById('cancelEdit').style.display = 'none';
-                    document.getElementById('searchText').value = ''; // Clear search text only
-
-                    // Refresh questions list with current filters
-                    fetchQuestions();
-                } catch (error) {
-                    console.error('Error saving question:', error);
-                    alert('Error saving question: ' + error.message);
-                }
-            } catch (error) {
-                console.error('Error in save handler:', error);
-                alert('Error: ' + error.message);
-            }
-        });
-
         // Wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', () => {
             try {
@@ -887,6 +792,13 @@
         // Save question handler
         document.getElementById('saveQuestion').addEventListener('click', async () => {
             try {
+                // Check if user is authenticated
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('يجب تسجيل الدخول لحفظ السؤال');
+                    return;
+                }
+
                 // Get form values
                 const competition1 = document.getElementById('competition1').value;
                 const competition2 = document.getElementById('competition2').value;
@@ -928,7 +840,10 @@
                     question: questionText,
                     answers,
                     correctAnswerIndex,
-                    dateModified: new Date()
+                    dateModified: new Date(),
+                    userId: user.uid,
+                    userEmail: user.email,
+                    userName: user.displayName || user.email
                 };
 
                 if (!state.currentEditingId) {
@@ -937,46 +852,44 @@
                     questionData.status = 1;
                 }
 
-                try {
-                    // Save to Firestore
-                    if (state.currentEditingId) {
-                        await updateDoc(doc(db, 'questions', state.currentEditingId), questionData);
-                        // Reset edit mode
-                        document.getElementById('saveQuestion').textContent = 'حفظ';
-                        document.getElementById('cancelEdit').style.display = 'none';
-                        state.currentEditingId = null;
-                    } else {
-                        await addDoc(collection(db, 'questions'), questionData);
-                    }
-
-                    // Store current filter values
-                    const currentCompetition1 = document.getElementById('competition1').value;
-                    const currentCompetition2 = document.getElementById('competition2').value;
-                    const currentLevel = document.getElementById('level').value;
-
-                    if (state.currentEditingId) {
-                        // Reset form and UI after edit
-                        cancelEdit();
-                    } else {
-                        // Clear only the question and answers for new question
-                        document.getElementById('questionText').value = '';
-                        document.getElementById('answersContainer').innerHTML = '';
-                        addAnswer(); // Add one empty answer
-
-                        // Restore filter values
-                        document.getElementById('competition1').value = currentCompetition1;
-                        document.getElementById('competition2').value = currentCompetition2;
-                        document.getElementById('level').value = currentLevel;
-                    }
-
-                    fetchQuestions(); // Refresh the questions list
-                } catch (error) {
-                    console.error('Error saving question:', error);
-                    alert('حدث خطأ أثناء حفظ السؤال. يرجى المحاولة مرة أخرى.');
+                // Save to Firestore
+                if (state.currentEditingId) {
+                    await updateDoc(doc(db, 'questions', state.currentEditingId), questionData);
+                    // Reset edit mode
+                    document.getElementById('saveQuestion').textContent = 'حفظ';
+                    document.getElementById('cancelEdit').style.display = 'none';
+                    state.currentEditingId = null;
+                } else {
+                    await addDoc(collection(db, 'questions'), questionData);
                 }
+
+                // Store current filter values
+                const currentCompetition1 = document.getElementById('competition1').value;
+                const currentCompetition2 = document.getElementById('competition2').value;
+                const currentLevel = document.getElementById('level').value;
+
+                if (state.currentEditingId) {
+                    // Reset form and UI after edit
+                    cancelEdit();
+                } else {
+                    // Clear only the question and answers for new question
+                    document.getElementById('questionText').value = '';
+                    document.getElementById('answersContainer').innerHTML = '';
+                    addAnswer(); // Add one empty answer
+
+                    // Restore filter values
+                    document.getElementById('competition1').value = currentCompetition1;
+                    document.getElementById('competition2').value = currentCompetition2;
+                    document.getElementById('level').value = currentLevel;
+                }
+
+                // Clear search text but keep filters
+                document.getElementById('searchText').value = '';
+
+                fetchQuestions(); // Refresh the questions list
             } catch (error) {
                 console.error('Error saving question:', error);
-                alert('حدث خطأ أثناء حفظ السؤال');
+                alert('حدث خطأ أثناء حفظ السؤال. يرجى المحاولة مرة أخرى.');
             }
         });
     </script>

@@ -606,12 +606,10 @@
                 const competition2 = document.getElementById('competition2').value;
                 const level = document.getElementById('level').value;
 
-                // Start with orderBy as the base query
-                // Create base query with sorting
-                let q = query(collection(db, 'questions'), orderBy('dateModified', 'desc'));
-                
-                // Get all questions
-                const querySnapshot = await getDocs(q);
+                // Get all questions with sorting
+                const querySnapshot = await db.collection('questions')
+                    .orderBy('dateModified', 'desc')
+                    .get();
                 let filteredDocs = querySnapshot.docs;
 
                 // Get search text and filters
@@ -855,16 +853,17 @@
                     } catch (error) {
                         console.error('Error adjusting answers:', error);
                     }
+                }
 
                 // Save to Firestore
                 if (state.currentEditingId) {
-                    await updateDoc(doc(db, 'questions', state.currentEditingId), questionData);
+                    await db.collection('questions').doc(state.currentEditingId).update(questionData);
                     // Reset edit mode
                     document.getElementById('saveQuestion').textContent = 'حفظ';
                     document.getElementById('cancelEdit').style.display = 'none';
                     state.currentEditingId = null;
                 } else {
-                    await addDoc(collection(db, 'questions'), questionData);
+                    await db.collection('questions').add(questionData);
                 }
 
                 // Store current filter values

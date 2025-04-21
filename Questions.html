@@ -355,11 +355,11 @@
                 const snapshot = await getDocs(q);
                 let filteredDocs = snapshot.docs;
 
-                // Skip filters if no filters are selected (for delete operation)
-                const hasFilters = competition1 || competition2 || level || searchText;
-
                 // Get search text
                 const searchText = document.getElementById('searchText').value.toLowerCase();
+
+                // Skip filters if no filters are selected (for delete operation)
+                const hasFilters = competition1 || competition2 || level || searchText;
 
                 // Apply filters in memory only if any filter is selected
                 if (hasFilters) {

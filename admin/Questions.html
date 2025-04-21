@@ -74,6 +74,19 @@
             gap: 10px;
             align-items: center;
             margin-bottom: 10px;
+            position: relative;
+        }
+        .answer-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .correct-answer {
+            margin: 0 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
         }
         .answer-group input[type="text"] {
             flex-grow: 1;
@@ -324,7 +337,6 @@
                                 <input type="text" id="questionText" placeholder="أدخل سؤالك">
                             </div>
                             <div class="answers-container" id="answersContainer"></div>
-                            <button type="button" class="btn btn-success" id="addAnswer">إضافة إجابة</button>
                             <button type="button" class="btn btn-primary" id="saveQuestion">حفظ</button>
                             <button type="button" class="btn btn-secondary" id="cancelEdit" style="display: none;" onclick="window.cancelEdit()">إلغاء</button>
                         </div>
@@ -545,8 +557,6 @@
                 <div class="answer-group" id="${answerId}">
                     <input type="text" class="answer-input" placeholder="أدخل الإجابة" value="${escapedAnswerText}">
                     <input type="radio" name="correctAnswer" class="correct-answer" ${isCorrect ? 'checked' : ''}>
-                    <label>الإجابة الصحيحة</label>
-                    <button type="button" class="btn btn-danger" onclick="window.deleteAnswer('${answerId}')">حذف</button>
                 </div>
             `;
             
@@ -563,10 +573,7 @@
                 addAnswer();
 
                 // Add click handler for Add Answer button
-                document.getElementById('addAnswer').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    addAnswer('', false);
-                });
+
 
                 // Fetch existing questions
                 fetchQuestions();
@@ -575,16 +582,7 @@
             }
         });
 
-        // Delete answer handler
-        window.deleteAnswer = (answerId) => {
-            const answersContainer = document.getElementById('answersContainer');
-            const answerElement = document.getElementById(answerId);
-            if (answerElement && answersContainer.children.length > 1) {
-                answerElement.remove();
-            } else {
-                alert('يجب أن يكون لديك على الأقل إجابة واحدة');
-            }
-        };
+
 
         // Delete question function
         window.deleteQuestion = async function(questionId) {
@@ -875,7 +873,11 @@
                     // Clear only the question and answers for new question
                     document.getElementById('questionText').value = '';
                     document.getElementById('answersContainer').innerHTML = '';
-                    addAnswer(); // Add one empty answer
+                    // Add 4 empty answers
+                document.getElementById('answersContainer').innerHTML = '';
+                for (let i = 0; i < 4; i++) {
+                    addAnswer('', false);
+                }
 
                     // Restore filter values
                     document.getElementById('competition1').value = currentCompetition1;

@@ -703,7 +703,7 @@
                         // Reset edit mode
                         document.getElementById('saveQuestion').textContent = 'حفظ';
                         document.getElementById('cancelEdit').style.display = 'none';
-                        currentEditingId = null;
+                        state.currentEditingId = null;
                     } else {
                         await addDoc(collection(db, 'questions'), questionData);
                     }
@@ -713,7 +713,7 @@
                     const currentCompetition2 = document.getElementById('competition2').value;
                     const currentLevel = document.getElementById('level').value;
 
-                    if (currentEditingId) {
+                    if (state.currentEditingId) {
                         // Reset form and UI after edit
                         cancelEdit();
                     } else {

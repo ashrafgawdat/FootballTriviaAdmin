@@ -573,11 +573,8 @@
                         await addDoc(collection(db, 'questions'), questionData);
                     }
 
-                    // Reset form
+                    // Reset question form but keep filters
                     document.getElementById('questionText').value = '';
-                    document.getElementById('competition1').value = '';
-                    document.getElementById('competition2').value = '';
-                    document.getElementById('level').value = '';
                     document.getElementById('answersContainer').innerHTML = '';
                     addAnswer(); // Add one empty answer
                     state.currentEditingId = null;
@@ -585,8 +582,9 @@
                     // Update UI
                     document.getElementById('saveQuestion').textContent = 'حفظ';
                     document.getElementById('cancelEdit').style.display = 'none';
+                    document.getElementById('searchText').value = ''; // Clear search text only
 
-                    // Refresh questions list
+                    // Refresh questions list with current filters
                     fetchQuestions();
                 } catch (error) {
                     console.error('Error saving question:', error);
@@ -636,10 +634,7 @@
             if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
                 try {
                     await deleteDoc(doc(db, 'questions', questionId));
-                    // Clear all filters before refreshing
-                    document.getElementById('competition1').value = '';
-                    document.getElementById('competition2').value = '';
-                    document.getElementById('level').value = '';
+                    // Clear only search text
                     document.getElementById('searchText').value = '';
                     fetchQuestions(); // Refresh the list after deletion
                 } catch (error) {
@@ -785,9 +780,6 @@
         // Function to cancel editing
         function cancelEdit() {
             document.getElementById('questionText').value = '';
-            document.getElementById('competition1').value = '';
-            document.getElementById('competition2').value = '';
-            document.getElementById('level').value = '';
             document.getElementById('answersContainer').innerHTML = '';
             document.getElementById('cancelEdit').style.display = 'none';
             document.getElementById('saveQuestion').textContent = 'حفظ';

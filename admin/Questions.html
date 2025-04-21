@@ -604,7 +604,7 @@
                     question: questionText,
                     answers,
                     correctAnswerIndex,
-
+                    dateModified: new Date(),
                     userId: user.uid,
                     userEmail: user.email,
                     userName: user.displayName || user.email
@@ -708,7 +708,7 @@
 
                 // Start with orderBy as the base query
                 // Create base query with sorting
-                let q = query(collection(db, 'questions'), orderBy('createdAt', 'desc'));
+                let q = query(collection(db, 'questions'), orderBy('dateModified', 'desc'));
                 
                 // Get all questions
                 const querySnapshot = await getDocs(q);

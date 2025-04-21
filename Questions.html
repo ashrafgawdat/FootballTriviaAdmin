@@ -578,7 +578,6 @@
 
         // Function to cancel editing
         function cancelEdit() {
-            state.currentEditingId = null;
             document.getElementById('questionText').value = '';
             document.getElementById('competition1').value = '';
             document.getElementById('competition2').value = '';
@@ -586,7 +585,8 @@
             document.getElementById('answersContainer').innerHTML = '';
             document.getElementById('cancelEdit').style.display = 'none';
             document.getElementById('saveQuestion').textContent = 'حفظ';
-            currentEditingId = null;
+            state.currentEditingId = null;
+            addAnswer(); // Add one empty answer
         }
 
         // Function to delete a question

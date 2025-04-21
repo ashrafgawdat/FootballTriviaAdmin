@@ -262,9 +262,6 @@
                 .join('');
         }
 
-        // Global variable for tracking edit state
-        let currentEditingId = null;
-
         // Initialize select dropdowns
         function initializeSelects() {
             const competition1Select = document.getElementById('competition1');
@@ -312,21 +309,10 @@
         const competitionMap = Object.fromEntries(competitions.map(c => [c.id, c.name]));
         const levelMap = Object.fromEntries(levels.map(l => [l.id, l.name]));
 
-        // Populate select elements
-        function populateSelect(selectId, options) {
-            const select = document.getElementById(selectId);
-            options.forEach(option => {
-                const optionElement = document.createElement('option');
-                optionElement.value = option.id;
-                optionElement.textContent = option.name;
-                select.appendChild(optionElement);
-            });
-        }
-
         // Populate all select elements
-        populateSelect('competition1', competitions);
-        populateSelect('competition2', competitions);
-        populateSelect('level', levels);
+        populateSelect(document.getElementById('competition1'), competitions);
+        populateSelect(document.getElementById('competition2'), competitions);
+        populateSelect(document.getElementById('level'), levels);
 
         // Add first answer automatically when page loads
         addAnswer();

@@ -585,7 +585,7 @@
         window.deleteQuestion = async function(questionId) {
             if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
                 try {
-                    await deleteDoc(doc(db, 'questions', questionId));
+                    await db.collection('questions').doc(questionId).delete();
                     // Clear only search text
                     document.getElementById('searchText').value = '';
                     fetchQuestions(); // Refresh the list after deletion

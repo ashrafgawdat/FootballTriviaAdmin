@@ -54,7 +54,7 @@
             .saved-question .action-buttons {
                 margin-bottom: 15px;
             }
-            .saved-questions > p {
+            .question-header {
                 margin-top: 30px;
             }
         }
@@ -747,7 +747,7 @@
                     return `
                         <div class="saved-question">
                             ${actionButtons}
-                            <p><strong>${data.question}</strong></p>
+                            <p class="question-header"><strong>${data.question}</strong></p>
                             <div class="answers-list">${answersHTML}</div>
                             <div class="question-meta">
                                 المسابقة: ${competitionMap[data.competition1] || ''}

@@ -109,19 +109,31 @@
             border: 1px solid #ddd;
             position: relative;
         }
-        .delete-btn {
+        .action-buttons {
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: #dc3545;
+            display: flex;
+            gap: 5px;
+        }
+        .delete-btn, .edit-btn {
             color: white;
             border: none;
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
         }
+        .delete-btn {
+            background-color: #dc3545;
+        }
         .delete-btn:hover {
             background-color: #c82333;
+        }
+        .edit-btn {
+            background-color: #0d6efd;
+        }
+        .edit-btn:hover {
+            background-color: #0b5ed7;
         }
         .saved-question h3 {
             margin: 0 0 10px 0;
@@ -189,6 +201,7 @@
                     <div class="answers-container" id="answersContainer"></div>
                     <button type="button" class="btn btn-success" id="addAnswer">إضافة إجابة</button>
                     <button type="button" class="btn btn-primary" id="saveQuestion">حفظ</button>
+                    <button type="button" class="btn btn-secondary" id="cancelEdit" style="display: none;" onclick="cancelEdit()">إلغاء</button>
                 </div>
             </div>
         </div>
@@ -202,7 +215,7 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy, enableIndexedDbPersistence, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, getDocs, where, orderBy, enableIndexedDbPersistence, deleteDoc, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -287,13 +300,14 @@
         fetchQuestions();
 
         // Add answer handler
-        function addAnswer() {
+        function addAnswer(answerText = '', isCorrect = false) {
             const answersContainer = document.getElementById('answersContainer');
             const answerId = `answer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const escapedAnswerText = answerText.replace(/"/g, '&quot;');
             const answerHTML = `
                 <div class="answer-group" id="${answerId}">
-                    <input type="text" class="answer-input" placeholder="أدخل الإجابة">
-                    <input type="radio" name="correctAnswer" class="correct-answer">
+                    <input type="text" class="answer-input" placeholder="أدخل الإجابة" value="${escapedAnswerText}">
+                    <input type="radio" name="correctAnswer" class="correct-answer" ${isCorrect ? 'checked' : ''}>
                     <label>الإجابة الصحيحة</label>
                     <button type="button" class="btn btn-danger" onclick="deleteAnswer('${answerId}')">حذف</button>
                 </div>
@@ -400,11 +414,16 @@
                         </div>
                     `).join('');
 
-                    const deleteButton = `<button type="button" onclick="deleteQuestion('${doc.id}')" class="delete-btn">حذف</button>`;
+                    const actionButtons = `
+                        <div class="action-buttons">
+                            <button type="button" onclick="editQuestion('${doc.id}')" class="edit-btn">تعديل</button>
+                            <button type="button" onclick="deleteQuestion('${doc.id}')" class="delete-btn">حذف</button>
+                        </div>
+                    `;
 
                     questionsHTML += `
                         <div class="saved-question">
-                            ${deleteButton}
+                            ${actionButtons}
                             <p><strong>${data.question}</strong></p>
                             <div class="saved-answers">
                                 ${answersHTML}
@@ -429,6 +448,57 @@
             }
         }
 
+        // Track current editing state
+        let currentEditingId = null;
+
+        // Edit question handler
+        window.editQuestion = async (questionId) => {
+            try {
+                const questionDoc = await getDoc(doc(db, 'questions', questionId));
+                if (questionDoc.exists()) {
+                    const data = questionDoc.data();
+                    
+                    // Load data into form
+                    document.getElementById('questionText').value = data.question;
+                    document.getElementById('competition1').value = data.competition1;
+                    document.getElementById('competition2').value = data.competition2 || '';
+                    document.getElementById('level').value = data.level;
+
+                    // Clear existing answers
+                    document.getElementById('answersContainer').innerHTML = '';
+
+                    // Add each answer
+                    data.answers.forEach((answer, index) => {
+                        addAnswer(answer, index === data.correctAnswerIndex);
+                    });
+
+                    // Update UI for edit mode
+                    document.getElementById('saveQuestion').textContent = 'حفظ التعديلات';
+                    document.getElementById('cancelEdit').style.display = 'inline-block';
+                    currentEditingId = questionId;
+
+                    // Scroll to form
+                    document.querySelector('.add-question-section').scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Error loading question for edit:', error);
+                alert('حدث خطأ أثناء تحميل السؤال للتعديل');
+            }
+        };
+
+        // Cancel edit handler
+        window.cancelEdit = () => {
+            // Reset form
+            document.getElementById('questionForm').reset();
+            document.getElementById('answersContainer').innerHTML = '';
+            addAnswer(); // Add one empty answer
+
+            // Reset UI
+            document.getElementById('saveQuestion').textContent = 'حفظ';
+            document.getElementById('cancelEdit').style.display = 'none';
+            currentEditingId = null;
+        };
+
         // Save question handler
         document.getElementById('saveQuestion').addEventListener('click', async () => {
             try {
@@ -438,21 +508,10 @@
                 const level = document.getElementById('level').value;
                 const questionText = document.getElementById('questionText').value;
 
-                // Get all answers
-                const answerGroups = document.querySelectorAll('.answer-group');
-                const answers = [];
-                let correctAnswerIndex = -1;
-
-                answerGroups.forEach((group, index) => {
-                    const answerText = group.querySelector('input[type="text"]').value;
-                    const isCorrect = group.querySelector('input[type="radio"]').checked;
-                    
-                    if (isCorrect) {
-                        correctAnswerIndex = index;
-                    }
-
-                    answers.push(answerText);
-                });
+                // Get answers
+                const answerElements = document.querySelectorAll('.answer-input');
+                const answers = Array.from(answerElements).map(input => input.value.trim());
+                const correctAnswerIndex = Array.from(document.querySelectorAll('.correct-answer')).findIndex(radio => radio.checked);
 
                 // Validate form
                 if (!questionText.trim()) {
@@ -476,7 +535,7 @@
                     return;
                 }
 
-                // Create question object
+                // Prepare question data
                 const questionData = {
                     competition1,
                     competition2,
@@ -484,32 +543,54 @@
                     question: questionText,
                     answers,
                     correctAnswerIndex,
-                    createdAt: new Date(),
                     dateModified: new Date()
                 };
 
-                // Save to Firestore
-                await addDoc(collection(db, 'questions'), questionData);
+                if (!currentEditingId) {
+                    // Add createdAt for new questions
+                    questionData.createdAt = new Date();
+                }
 
-                // Store current filter values
-                const currentCompetition1 = document.getElementById('competition1').value;
-                const currentCompetition2 = document.getElementById('competition2').value;
-                const currentLevel = document.getElementById('level').value;
+                try {
+                    // Save to Firestore
+                    if (currentEditingId) {
+                        await updateDoc(doc(db, 'questions', currentEditingId), questionData);
+                        // Reset edit mode
+                        document.getElementById('saveQuestion').textContent = 'حفظ';
+                        document.getElementById('cancelEdit').style.display = 'none';
+                        currentEditingId = null;
+                    } else {
+                        await addDoc(collection(db, 'questions'), questionData);
+                    }
 
-                // Clear only the question and answers
-                document.getElementById('questionText').value = '';
-                document.getElementById('answersContainer').innerHTML = '';
-                addAnswer(); // Add one empty answer
+                    // Store current filter values
+                    const currentCompetition1 = document.getElementById('competition1').value;
+                    const currentCompetition2 = document.getElementById('competition2').value;
+                    const currentLevel = document.getElementById('level').value;
 
-                // Restore filter values
-                document.getElementById('competition1').value = currentCompetition1;
-                document.getElementById('competition2').value = currentCompetition2;
-                document.getElementById('level').value = currentLevel;
+                    if (currentEditingId) {
+                        // Reset form and UI after edit
+                        cancelEdit();
+                    } else {
+                        // Clear only the question and answers for new question
+                        document.getElementById('questionText').value = '';
+                        document.getElementById('answersContainer').innerHTML = '';
+                        addAnswer(); // Add one empty answer
 
-                fetchQuestions(); // Refresh the questions list
+                        // Restore filter values
+                        document.getElementById('competition1').value = currentCompetition1;
+                        document.getElementById('competition2').value = currentCompetition2;
+                        document.getElementById('level').value = currentLevel;
+                    }
+
+                    fetchQuestions(); // Refresh the questions list
+                } catch (error) {
+                    console.error('Error saving question:', error);
+                    alert('حدث خطأ أثناء حفظ السؤال. يرجى المحاولة مرة أخرى.');
+                }
             } catch (error) {
                 console.error('Error saving question:', error);
-                alert('خطأ في حفظ السؤال. يرجى المحاولة مرة أخرى.');
+                alert('حدث خطأ أثناء حفظ السؤال');
             }
         });
     </script>

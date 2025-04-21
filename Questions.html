@@ -241,7 +241,7 @@
             // Helper function to populate select element
             function populateSelect(selectElement, options) {
                 selectElement.innerHTML = options
-                    .map(opt => `<option value="${opt.value}">${opt.name}</option>`)
+                    .map(opt => `<option value="${opt.id}">${opt.name}</option>`)
                     .join('');
             }
 
@@ -263,27 +263,25 @@
 
         // Define competitions array
         const competitions = [
-            { value: '', name: 'اختر المسابقة' },
-            { value: 'ucl', name: 'دوري أبطال أوروبا' },
-            { value: 'uel', name: 'الدوري الأوروبي' },
-            { value: 'uecl', name: 'دوري المؤتمر الأوروبي' },
-            { value: 'premierLeague', name: 'الدوري الإنجليزي الممتاز' },
-            { value: 'laLiga', name: 'الدوري الإسباني' },
-            { value: 'bundesliga', name: 'الدوري الألماني' },
-            { value: 'serieA', name: 'الدوري الإيطالي' },
-            { value: 'ligue1', name: 'الدوري الفرنسي' },
-            { value: 'worldCup', name: 'كأس العالم' },
-            { value: 'euros', name: 'كأس أمم أوروبا' },
-            { value: 'afcon', name: 'كأس أمم أفريقيا' },
-            { value: 'copaAmerica', name: 'كوبا أمريكا' }
+            { id: '', name: 'اختر المسابقة' },
+            { id: '1', name: 'World' },
+            { id: '2', name: 'Europe' },
+            { id: '3', name: 'Asia' },
+            { id: '4', name: 'Africa' },
+            { id: '5', name: 'Latin America' },
+            { id: '6', name: 'Egypt' },
+            { id: '7', name: 'Spain' },
+            { id: '8', name: 'England' },
+            { id: '9', name: 'Italy' },
+            { id: '10', name: 'Germany' }
         ];
 
         // Define levels array
         const levels = [
-            { value: '', name: 'اختر المستوى' },
-            { value: 'easy', name: 'سهل' },
-            { value: 'medium', name: 'متوسط' },
-            { value: 'hard', name: 'صعب' }
+            { id: '', name: 'اختر المستوى' },
+            { id: '1', name: 'سهل' },
+            { id: '2', name: 'متوسط' },
+            { id: '3', name: 'صعب' }
         ];
 
         // Create a map for quick lookups

@@ -248,36 +248,31 @@
             appId: "1:807827295863:web:4d9ba6f0a5b77dcd954072"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase and global state
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore();
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
-            } else if (err.code == 'unimplemented') {
-                console.log('The current browser does not support all of the features required to enable persistence');
-            }
-        });
+        const db = getFirestore(app);
+        const state = {
+            currentEditingId: null
+        };
+
+        // Helper function to populate select element
+        function populateSelect(selectElement, options) {
+            selectElement.innerHTML = options
+                .map(opt => `<option value="${opt.id}">${opt.name}</option>`)
+                .join('');
+        }
+
+        // Global variable for tracking edit state
+        let currentEditingId = null;
 
         // Initialize select dropdowns
         function initializeSelects() {
-            // Helper function to populate select element
-            function populateSelect(selectElement, options) {
-                selectElement.innerHTML = options
-                    .map(opt => `<option value="${opt.id}">${opt.name}</option>`)
-                    .join('');
-            }
-
-            // Competition 1 options
             const competition1Select = document.getElementById('competition1');
-            populateSelect(competition1Select, competitions);
-
-            // Competition 2 options (same as Competition 1)
             const competition2Select = document.getElementById('competition2');
-            populateSelect(competition2Select, competitions);
-
-            // Level options
             const levelSelect = document.getElementById('level');
+
+            populateSelect(competition1Select, competitions);
+            populateSelect(competition2Select, competitions);
             populateSelect(levelSelect, levels);
         }
 
@@ -515,9 +510,6 @@
             }
         }
 
-        // Track current editing state
-        let currentEditingId = null;
-
         // Edit question handler
         window.editQuestion = async (questionId) => {
             try {
@@ -542,7 +534,7 @@
                     // Update UI for edit mode
                     document.getElementById('saveQuestion').textContent = 'حفظ التعديلات';
                     document.getElementById('cancelEdit').style.display = 'inline-block';
-                    currentEditingId = questionId;
+                    state.currentEditingId = questionId;
 
                     // Scroll to form
                     document.querySelector('.add-question-section').scrollIntoView({ behavior: 'smooth' });
@@ -551,6 +543,19 @@
                 console.error('Error editing question:', error);
                 alert('Error editing question: ' + error.message);
             }
+        }
+
+        // Function to cancel editing
+        function cancelEdit() {
+            state.currentEditingId = null;
+            document.getElementById('questionText').value = '';
+            document.getElementById('competition1').value = '';
+            document.getElementById('competition2').value = '';
+            document.getElementById('level').value = '';
+            document.getElementById('answersContainer').innerHTML = '';
+            document.getElementById('cancelEdit').style.display = 'none';
+            document.getElementById('saveQuestion').textContent = 'حفظ';
+            currentEditingId = null;
         }
 
         // Function to delete a question
@@ -564,18 +569,6 @@
                     alert('Error deleting question: ' + error.message);
                 }
             }
-        }
-
-        // Function to cancel editing
-        function cancelEdit() {
-            currentEditingId = null;
-            document.getElementById('questionText').value = '';
-            document.getElementById('competition1').value = '';
-            document.getElementById('competition2').value = '';
-            document.getElementById('level').value = '';
-            document.getElementById('answersContainer').innerHTML = '';
-            document.getElementById('cancelEdit').style.display = 'none';
-            document.getElementById('saveQuestion').textContent = 'حفظ';
         }
 
         // Function to copy question data to form
@@ -666,7 +659,7 @@
                     dateModified: new Date()
                 };
 
-                if (!currentEditingId) {
+                if (!state.currentEditingId) {
                     // Add createdAt and status for new questions
                     questionData.createdAt = new Date();
                     questionData.status = 1;
@@ -674,8 +667,8 @@
 
                 try {
                     // Save to Firestore
-                    if (currentEditingId) {
-                        await updateDoc(doc(db, 'questions', currentEditingId), questionData);
+                    if (state.currentEditingId) {
+                        await updateDoc(doc(db, 'questions', state.currentEditingId), questionData);
                         // Reset edit mode
                         document.getElementById('saveQuestion').textContent = 'حفظ';
                         document.getElementById('cancelEdit').style.display = 'none';

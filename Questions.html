@@ -154,6 +154,12 @@
             color: #666;
             margin-bottom: 10px;
         }
+        .questions-count {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #666;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -161,7 +167,6 @@
     <form id="questionForm" onsubmit="return false;">
         <div class="main-container">
             <div class="filters-section">
-                <h3>التصفية</h3>
                 <div class="competitions-container">
                     <div class="competition-group">
                         <label for="competition1">المسابقة 1:</label>
@@ -191,7 +196,6 @@
             </div>
 
             <div class="add-question-section">
-                <h3>إضافة سؤال جديد</h3>
                 <div class="question-container">
                     <div class="form-group">
                         <label for="questionText">السؤال:</label>
@@ -206,6 +210,7 @@
         </div>
 
         <div class="saved-questions">
+            <div id="questionsCount" class="questions-count"></div>
             <div id="savedQuestionsContainer"></div>
         </div>
     </form>
@@ -405,52 +410,54 @@
                 // Create base query with sorting
                 let q = query(collection(db, 'questions'), orderBy('dateModified', 'desc'));
                 
-                // Get all documents and filter in memory
-                const snapshot = await getDocs(q);
-                let filteredDocs = snapshot.docs;
+                // Get all questions
+                const querySnapshot = await getDocs(q);
+                let filteredDocs = querySnapshot.docs;
 
-                // Get search text
+                // Get search text and filters
                 const searchText = document.getElementById('searchText').value.toLowerCase();
+                const competition1Filter = document.getElementById('competition1').value;
+                const competition2Filter = document.getElementById('competition2').value;
+                const levelFilter = document.getElementById('level').value;
 
-                // Skip filters if no filters are selected (for delete operation)
-                const hasFilters = competition1 || competition2 || level || searchText;
-
-                // Apply filters in memory only if any filter is selected
-                if (hasFilters) {
-                    if (competition1) {
-                        filteredDocs = filteredDocs.filter(doc => doc.data().competition1 === competition1);
-                    }
-                    if (competition2) {
-                        filteredDocs = filteredDocs.filter(doc => doc.data().competition2 === competition2);
-                    }
-                    if (level) {
-                        filteredDocs = filteredDocs.filter(doc => doc.data().level === level);
-                    }
-                    if (searchText) {
-                        filteredDocs = filteredDocs.filter(doc => {
-                            const data = doc.data();
-                            const questionMatch = data.question.toLowerCase().includes(searchText);
-                            const answersMatch = data.answers.some(answer => 
-                                answer.toLowerCase().includes(searchText)
-                            );
-                            return questionMatch || answersMatch;
-                        });
-                    }
+                // Apply filters
+                if (searchText) {
+                    filteredDocs = filteredDocs.filter(doc => {
+                        const data = doc.data();
+                        return data.question.toLowerCase().includes(searchText) ||
+                            data.answers.some(answer => answer.toLowerCase().includes(searchText));
+                    });
                 }
 
-                let questionsHTML = '';
+                if (competition1Filter) {
+                    filteredDocs = filteredDocs.filter(doc => doc.data().competition1 === competition1Filter);
+                }
 
+                if (competition2Filter) {
+                    filteredDocs = filteredDocs.filter(doc => doc.data().competition2 === competition2Filter);
+                }
+
+                if (levelFilter) {
+                    filteredDocs = filteredDocs.filter(doc => doc.data().level === levelFilter);
+                }
+
+                // Update questions count after filtering
+                const questionsCountElement = document.getElementById('questionsCount');
+                questionsCountElement.textContent = `عدد الأسئلة: ${filteredDocs.length}`;
+
+                // Check if we have any questions
                 if (filteredDocs.length === 0) {
-                    savedQuestionsContainer.innerHTML = '<p>لم يتم العثور على أسئلة للتصفية المحددة.</p>';
+                    savedQuestionsContainer.innerHTML = '<p>لا توجد أسئلة مطابقة</p>';
                     return;
                 }
 
-                filteredDocs.forEach((doc) => {
+                // Generate HTML for all questions
+                const questionsHTML = filteredDocs.map(doc => {
                     const data = doc.data();
 
                     const answersHTML = data.answers.map((answer, index) => `
                         <div class="saved-answer ${index === data.correctAnswerIndex ? 'correct' : ''}">
-                            ${answer} ${index === data.correctAnswerIndex ? '✓' : ''}
+                            ${answer}
                         </div>
                     `).join('');
 
@@ -461,30 +468,27 @@
                         </div>
                     `;
 
-                    questionsHTML += `
+                    return `
                         <div class="saved-question">
                             ${actionButtons}
                             <p><strong>${data.question}</strong></p>
-                            <div class="saved-answers">
-                                ${answersHTML}
-                            </div>
+                            <div class="answers-list">${answersHTML}</div>
                             <div class="question-meta">
-                                <small>
-                                    ${competitionMap[data.competition1] || ''}
-                                    ${data.competition2 ? ` + ${competitionMap[data.competition2]}` : ''}
-                                    | ${levelMap[data.level]}
-                                </small>
+                                المسابقة: ${competitionMap[data.competition1] || ''}
+                                ${data.competition2 ? `/ ${competitionMap[data.competition2]}` : ''}
+                                | المستوى: ${levelMap[data.level] || ''}
+                                | تاريخ التعديل: ${new Date(data.dateModified.seconds * 1000).toLocaleString('ar-EG')}
                             </div>
                         </div>
                     `;
-                });
+                }).join('');
 
+                // Update the container
                 savedQuestionsContainer.innerHTML = questionsHTML;
             } catch (error) {
                 console.error('Error fetching questions:', error);
                 const errorMessage = error.message || 'Unknown error';
-                document.getElementById('savedQuestionsContainer').innerHTML = 
-                    `<p style="color: red;">خطأ في تحميل الأسئلة: ${errorMessage}</p>`;
+                alert(`Error fetching questions: ${errorMessage}`);
             }
         }
 

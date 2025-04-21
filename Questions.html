@@ -621,17 +621,9 @@
                     document.getElementById('level').value = data.level;
 
                     // Add answers
-                    const answersContainer = document.getElementById('answersContainer');
-                    answersContainer.innerHTML = '';
+                    document.getElementById('answersContainer').innerHTML = '';
                     data.answers.forEach((answer, index) => {
-                        const answerDiv = document.createElement('div');
-                        answerDiv.className = 'answer-input';
-                        answerDiv.innerHTML = `
-                            <input type="text" value="${answer}">
-                            <input type="radio" name="correctAnswer" ${index === data.correctAnswerIndex ? 'checked' : ''}>
-                            <button type="button" class="btn btn-danger" onclick="deleteAnswer(this)">حذف</button>
-                        `;
-                        answersContainer.appendChild(answerDiv);
+                        addAnswer(answer, index === data.correctAnswerIndex);
                     });
 
                     // Scroll to the form

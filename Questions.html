@@ -596,8 +596,9 @@
                 };
 
                 if (!currentEditingId) {
-                    // Add createdAt for new questions
+                    // Add createdAt and status for new questions
                     questionData.createdAt = new Date();
+                    questionData.status = 1;
                 }
 
                 try {

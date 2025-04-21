@@ -548,12 +548,25 @@
                     document.querySelector('.add-question-section').scrollIntoView({ behavior: 'smooth' });
                 }
             } catch (error) {
-                console.error('Error loading question for edit:', error);
-                alert('حدث خطأ أثناء تحميل السؤال للتعديل');
+                console.error('Error editing question:', error);
+                alert('Error editing question: ' + error.message);
             }
-        };
+        }
 
-        // Cancel edit handler
+        // Function to delete a question
+        async function deleteQuestion(questionId) {
+            if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+                try {
+                    await deleteDoc(doc(db, 'questions', questionId));
+                    await fetchQuestions(); // Refresh the list
+                } catch (error) {
+                    console.error('Error deleting question:', error);
+                    alert('Error deleting question: ' + error.message);
+                }
+            }
+        }
+
+        // Function to cancel editing
         function cancelEdit() {
             currentEditingId = null;
             document.getElementById('questionText').value = '';

@@ -51,6 +51,29 @@
             body {
                 padding: 10px;
             }
+            .action-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            .action-buttons button {
+                width: 100%;
+                margin: 0;
+                padding: 10px;
+            }
+            .answer-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .answer-group input[type="text"],
+            .answer-group input[type="radio"] {
+                width: 100%;
+                margin: 5px 0;
+            }
+            .form-group input,
+            .form-group select {
+                width: 100%;
+                margin: 5px 0;
+            }
         }
         .form-group {
             margin-bottom: 20px;
@@ -118,17 +141,6 @@
             min-width: 60px;
             text-align: center;
         }
-        @media (max-width: 480px) {
-            .action-buttons {
-                flex-direction: column;
-                width: 100%;
-            }
-            .action-buttons button {
-                width: 100%;
-                margin: 0;
-                padding: 10px;
-            }
-        }
         .edit-btn {
             background-color: #ffc107;
         }
@@ -166,21 +178,8 @@
         .answers-container {
             margin: 10px 0;
         }
-        @media (max-width: 480px) {
-            .answer-group {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .answer-group input[type="text"],
-            .answer-group input[type="radio"] {
-                width: 100%;
-                margin: 5px 0;
-            }
-            .form-group input,
-            .form-group select {
-                width: 100%;
-                margin: 5px 0;
-            }
+        .answers-container {
+            margin: 10px 0;
         }
         .saved-questions {
             margin-top: 40px;

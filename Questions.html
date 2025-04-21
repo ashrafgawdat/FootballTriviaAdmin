@@ -201,7 +201,7 @@
                     <div class="answers-container" id="answersContainer"></div>
                     <button type="button" class="btn btn-success" id="addAnswer">إضافة إجابة</button>
                     <button type="button" class="btn btn-primary" id="saveQuestion">حفظ</button>
-                    <button type="button" class="btn btn-secondary" id="cancelEdit" style="display: none;" onclick="cancelEdit()">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" id="cancelEdit" style="display: none;" onclick="window.cancelEdit()">إلغاء</button>
                 </div>
             </div>
         </div>
@@ -488,15 +488,24 @@
 
         // Cancel edit handler
         window.cancelEdit = () => {
-            // Reset form
-            document.getElementById('questionForm').reset();
-            document.getElementById('answersContainer').innerHTML = '';
-            addAnswer(); // Add one empty answer
+            try {
+                // Clear form fields
+                document.getElementById('questionText').value = '';
+                document.getElementById('competition1').value = '';
+                document.getElementById('competition2').value = '';
+                document.getElementById('level').value = '';
 
-            // Reset UI
-            document.getElementById('saveQuestion').textContent = 'حفظ';
-            document.getElementById('cancelEdit').style.display = 'none';
-            currentEditingId = null;
+                // Reset answers
+                document.getElementById('answersContainer').innerHTML = '';
+                addAnswer(); // Add one empty answer
+
+                // Reset UI
+                document.getElementById('saveQuestion').textContent = 'حفظ';
+                document.getElementById('cancelEdit').style.display = 'none';
+                currentEditingId = null;
+            } catch (error) {
+                console.error('Error in cancelEdit:', error);
+            }
         };
 
         // Save question handler

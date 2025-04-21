@@ -310,7 +310,7 @@
                             </div>
 
                             <div class="competition-group">
-                                <label for="competition2">المسابقة 2:</label>
+                                <label for="competition2">المسابقة 2: (اختياري)</label>
                                 <select id="competition2" name="competition2">
                                 </select>
                             </div>
@@ -569,8 +569,10 @@
                 // Initialize competitions and levels
                 window.initializeSelects();
 
-                // Initialize the form with one empty answer
-                addAnswer();
+                // Initialize the form with four empty answers
+                for (let i = 0; i < 4; i++) {
+                    addAnswer();
+                }
 
                 // Add click handler for Add Answer button
 
@@ -848,7 +850,16 @@
                     // Add createdAt and status for new questions
                     questionData.createdAt = new Date();
                     questionData.status = 1;
-                }
+                    
+                    try {
+                        // Ensure exactly 4 answers
+                        while (answers.length < 4) {
+                            answers.push('');
+                        }
+                        answers = answers.slice(0, 4);
+                    } catch (error) {
+                        console.error('Error adjusting answers:', error);
+                    }
 
                 // Save to Firestore
                 if (state.currentEditingId) {
@@ -870,14 +881,12 @@
                     // Reset form and UI after edit
                     cancelEdit();
                 } else {
-                    // Clear only the question and answers for new question
+                    // Clear the question and reset to 4 empty answers
                     document.getElementById('questionText').value = '';
                     document.getElementById('answersContainer').innerHTML = '';
-                    // Add 4 empty answers
-                document.getElementById('answersContainer').innerHTML = '';
-                for (let i = 0; i < 4; i++) {
-                    addAnswer('', false);
-                }
+                    for (let i = 0; i < 4; i++) {
+                        addAnswer('', false);
+                    }
 
                     // Restore filter values
                     document.getElementById('competition1').value = currentCompetition1;

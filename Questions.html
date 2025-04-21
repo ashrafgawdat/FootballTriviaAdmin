@@ -225,18 +225,53 @@
             appId: "1:807827295863:web:4d9ba6f0a5b77dcd954072"
         };
 
-        // Initialize Firebase and Firestore
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        // Enable offline persistence
+        const db = getFirestore();
         enableIndexedDbPersistence(db).catch((err) => {
             if (err.code == 'failed-precondition') {
-                console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
+                console.log('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
             } else if (err.code == 'unimplemented') {
-                console.warn('The current browser does not support persistence.');
+                console.log('The current browser does not support all of the features required to enable persistence');
             }
         });
+
+        // Initialize select dropdowns
+        function initializeSelects() {
+            // Competition 1 options
+            const competition1Select = document.getElementById('competition1');
+            competition1Select.innerHTML = `
+                <option value="">اختر المسابقة</option>
+                <option value="premierLeague">الدوري الإنجليزي الممتاز</option>
+                <option value="laLiga">الدوري الإسباني</option>
+                <option value="serieA">الدوري الإيطالي</option>
+                <option value="bundesliga">الدوري الألماني</option>
+                <option value="ligue1">الدوري الفرنسي</option>
+                <option value="ucl">دوري أبطال أوروبا</option>
+                <option value="uel">الدوري الأوروبي</option>
+                <option value="uecl">دوري المؤتمر الأوروبي</option>
+                <option value="worldCup">كأس العالم</option>
+                <option value="euros">كأس أمم أوروبا</option>
+                <option value="afcon">كأس أمم أفريقيا</option>
+                <option value="copaAmerica">كوبا أمريكا</option>
+            `;
+
+            // Competition 2 options (same as Competition 1)
+            const competition2Select = document.getElementById('competition2');
+            competition2Select.innerHTML = competition1Select.innerHTML;
+
+            // Level options
+            const levelSelect = document.getElementById('level');
+            levelSelect.innerHTML = `
+                <option value="">اختر المستوى</option>
+                <option value="easy">سهل</option>
+                <option value="medium">متوسط</option>
+                <option value="hard">صعب</option>
+            `;
+        }
+
+        // Make functions globally accessible
+        window.initializeSelects = initializeSelects;
 
         // Define competitions and levels arrays
         const competitions = [
@@ -318,17 +353,21 @@
 
         // Wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize competitions and levels
-            initializeSelects();
+            try {
+                // Initialize competitions and levels
+                window.initializeSelects();
 
-            // Add click handler for the Add Answer button
-            document.getElementById('addAnswer').addEventListener('click', () => window.addAnswer());
+                // Add click handler for the Add Answer button
+                document.getElementById('addAnswer').addEventListener('click', () => window.addAnswer());
 
-            // Initialize the form with one empty answer
-            window.addAnswer();
+                // Initialize the form with one empty answer
+                window.addAnswer();
 
-            // Fetch existing questions
-            fetchQuestions();
+                // Fetch existing questions
+                fetchQuestions();
+            } catch (error) {
+                console.error('Error during initialization:', error);
+            }
         });
 
         // Delete answer handler

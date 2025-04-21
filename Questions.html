@@ -380,7 +380,7 @@
         function addAnswer(answerText = '', isCorrect = false) {
             const answersContainer = document.getElementById('answersContainer');
             const answerId = `answer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const escapedAnswerText = answerText.replace(/"/g, '&quot;');
+            const escapedAnswerText = String(answerText || '').replace(/"/g, '&quot;');
             const answerHTML = `
                 <div class="answer-group" id="${answerId}">
                     <input type="text" class="answer-input" placeholder="أدخل الإجابة" value="${escapedAnswerText}">

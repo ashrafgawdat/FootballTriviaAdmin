@@ -206,6 +206,30 @@
             color: #666;
             text-align: right;
         }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .page-btn:hover {
+            background: #f0f0f0;
+        }
+        .page-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
         .auth-section {
             text-align: center;
             margin-bottom: 20px;
@@ -422,7 +446,9 @@
             }
         };
         const state = {
-            currentEditingId: null
+            currentEditingId: null,
+            currentPage: 1,
+            itemsPerPage: 10
         };
 
         // Helper function to populate select element
@@ -529,16 +555,18 @@
         populateSelect(document.getElementById('competition2'), competitions);
         populateSelect(document.getElementById('level'), levels);
 
-        // Add event listeners
-        document.getElementById('competition1').addEventListener('change', fetchQuestions);
-        document.getElementById('competition2').addEventListener('change', fetchQuestions);
-        document.getElementById('level').addEventListener('change', fetchQuestions);
-        document.getElementById('searchButton').addEventListener('click', fetchQuestions);
+        // Add event listeners for filters
+        document.getElementById('searchText').addEventListener('input', () => fetchQuestions(true));
+        document.getElementById('competition1').addEventListener('change', () => fetchQuestions(true));
+        document.getElementById('competition2').addEventListener('change', () => fetchQuestions(true));
+        document.getElementById('level').addEventListener('change', () => fetchQuestions(true));
         document.getElementById('searchText').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                fetchQuestions();
+                fetchQuestions(true);
             }
         });
+
+        document.getElementById('searchButton').addEventListener('click', () => fetchQuestions(true));
 
         // Fetch questions on page load
         fetchQuestions();
@@ -596,15 +624,27 @@
             }
         }
 
+        // Function to handle page changes
+        function changePage(newPage) {
+            state.currentPage = newPage;
+            fetchQuestions(false); // false means don't reset page
+        }
+
+        // Function to reset to page 1
+        function resetToFirstPage() {
+            state.currentPage = 1;
+            fetchQuestions(false);
+        }
+
         // Fetch and display questions
-        async function fetchQuestions() {
+        async function fetchQuestions(resetPage = true) {
             try {
+                if (resetPage) {
+                    state.currentPage = 1;
+                }
+
                 const savedQuestionsContainer = document.getElementById('savedQuestionsContainer');
                 savedQuestionsContainer.innerHTML = '<p>جاري تحميل الأسئلة...</p>';
-
-                const competition1 = document.getElementById('competition1').value;
-                const competition2 = document.getElementById('competition2').value;
-                const level = document.getElementById('level').value;
 
                 // Get all questions with sorting
                 const querySnapshot = await db.collection('questions')
@@ -639,18 +679,27 @@
                     filteredDocs = filteredDocs.filter(doc => doc.data().level === levelFilter);
                 }
 
-                // Update questions count after filtering
+                // Calculate pagination
+                const totalItems = filteredDocs.length;
+                const totalPages = Math.ceil(totalItems / state.itemsPerPage);
+                const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+                const endIndex = Math.min(startIndex + state.itemsPerPage, totalItems);
+
+                // Get current page items
+                const currentPageDocs = filteredDocs.slice(startIndex, endIndex);
+
+                // Update questions count and pagination info
                 const questionsCountElement = document.getElementById('questionsCount');
-                questionsCountElement.textContent = `عدد الأسئلة: ${filteredDocs.length}`;
+                questionsCountElement.textContent = `عدد الأسئلة: ${totalItems} | الصفحة ${state.currentPage} من ${totalPages}`;
 
                 // Check if we have any questions
-                if (filteredDocs.length === 0) {
+                if (totalItems === 0) {
                     savedQuestionsContainer.innerHTML = '<p>لا توجد أسئلة مطابقة</p>';
                     return;
                 }
 
-                // Generate HTML for all questions
-                const questionsHTML = filteredDocs.map(doc => {
+                // Generate HTML for current page questions
+                const questionsHTML = currentPageDocs.map(doc => {
                     const data = doc.data();
 
                     const answersHTML = data.answers.map((answer, index) => `
@@ -682,8 +731,19 @@
                     `;
                 }).join('');
 
-                // Update the container
-                savedQuestionsContainer.innerHTML = questionsHTML;
+                // Generate pagination controls
+                const paginationHTML = `
+                    <div class="pagination">
+                        ${state.currentPage > 1 ? `<button onclick="changePage(${state.currentPage - 1})" class="page-btn">السابق</button>` : ''}
+                        ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
+                            <button onclick="changePage(${page})" class="page-btn ${page === state.currentPage ? 'active' : ''}">${page}</button>
+                        `).join('')}
+                        ${state.currentPage < totalPages ? `<button onclick="changePage(${state.currentPage + 1})" class="page-btn">التالي</button>` : ''}
+                    </div>
+                `;
+
+                // Update the container with questions and pagination
+                savedQuestionsContainer.innerHTML = questionsHTML + paginationHTML;
             } catch (error) {
                 console.error('Error fetching questions:', error);
                 const errorMessage = error.message || 'Unknown error';

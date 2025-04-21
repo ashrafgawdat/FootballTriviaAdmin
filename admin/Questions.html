@@ -800,7 +800,7 @@
 
                 // Get answers
                 const answerElements = document.querySelectorAll('.answer-input');
-                const answers = Array.from(answerElements).map(input => input.value.trim());
+                let answers = Array.from(answerElements).map(input => input.value.trim());
                 const correctAnswerIndex = Array.from(document.querySelectorAll('.correct-answer')).findIndex(radio => radio.checked);
 
                 // Validate form
@@ -844,15 +844,11 @@
                     questionData.createdAt = new Date();
                     questionData.status = 1;
                     
-                    try {
-                        // Ensure exactly 4 answers
-                        while (answers.length < 4) {
-                            answers.push('');
-                        }
-                        answers = answers.slice(0, 4);
-                    } catch (error) {
-                        console.error('Error adjusting answers:', error);
+                    // Ensure exactly 4 answers
+                    while (answers.length < 4) {
+                        answers.push('');
                     }
+                    answers = answers.slice(0, 4);
                 }
 
                 // Save to Firestore

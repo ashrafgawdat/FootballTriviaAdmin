@@ -752,10 +752,9 @@
         // Function to copy question data to form
         async function copyQuestion(questionId) {
             try {
-                const docRef = doc(db, 'questions', questionId);
-                const docSnap = await getDoc(docRef);
+                const docSnap = await db.collection('questions').doc(questionId).get();
 
-                if (docSnap.exists()) {
+                if (docSnap.exists) {
                     const data = docSnap.data();
 
                     // Reset the form first
@@ -769,6 +768,8 @@
 
                     // Add answers
                     document.getElementById('answersContainer').innerHTML = '';
+                    
+                    // Add each answer
                     data.answers.forEach((answer, index) => {
                         addAnswer(answer, index === data.correctAnswerIndex);
                     });
@@ -778,7 +779,7 @@
                 }
             } catch (error) {
                 console.error('Error copying question:', error);
-                alert('Error copying question: ' + error.message);
+                alert('حدث خطأ أثناء نسخ السؤال');
             }
         }
 

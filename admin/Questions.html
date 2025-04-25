@@ -675,9 +675,15 @@
 
         let lastVisibleDoc = null;
 
+        // Function to handle page changes
+        async function changePage(newPage) {
+            state.currentPage = newPage;
+            await fetchQuestions(false);
+        }
+
         // Function to handle next page
         async function nextPage() {
-            if (lastVisibleDoc) {
+            if (state.currentPage < state.totalPages) {
                 state.currentPage++;
                 await fetchQuestions(false);
             }
@@ -730,32 +736,46 @@
                     query = query.where('level', '==', levelFilter);
                 }
 
-                // Get total count for pagination
-                const totalSnapshot = await query.get();
-                const totalItems = totalSnapshot.docs.length;
-                const totalPages = Math.ceil(totalItems / state.itemsPerPage);
+                let currentPageDocs;
+                let totalItems;
+                let totalPages;
 
-                // Apply pagination
-                if (lastVisibleDoc && state.currentPage > 1) {
-                    query = query.startAfter(lastVisibleDoc);
-                }
-                query = query.limit(state.itemsPerPage);
-
-                // Get the current page data
-                const querySnapshot = await query.get();
-                let currentPageDocs = querySnapshot.docs;
-
-                // Update last visible doc for next page
-                lastVisibleDoc = currentPageDocs[currentPageDocs.length - 1];
-
-                // Apply text search filter (client-side since Firestore doesn't support full-text search)
                 if (searchText) {
-                    currentPageDocs = currentPageDocs.filter(doc => {
+                    // Client-side pagination for search
+                    const allDocsSnapshot = await query.get();
+                    const allDocs = allDocsSnapshot.docs;
+                    
+                    // Apply text search filter
+                    const filteredDocs = allDocs.filter(doc => {
                         const data = doc.data();
                         return data.question.toLowerCase().includes(searchText) ||
                             data.answers.some(answer => answer.toLowerCase().includes(searchText));
                     });
+
+                    // Calculate pagination
+                    totalItems = filteredDocs.length;
+                    totalPages = Math.ceil(totalItems / state.itemsPerPage);
+                    const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+                    const endIndex = startIndex + state.itemsPerPage;
+                    currentPageDocs = filteredDocs.slice(startIndex, endIndex);
+                } else {
+                    // Server-side pagination
+                    const totalSnapshot = await query.get();
+                    totalItems = totalSnapshot.docs.length;
+                    totalPages = Math.ceil(totalItems / state.itemsPerPage);
+
+                    if (lastVisibleDoc && state.currentPage > 1) {
+                        query = query.startAfter(lastVisibleDoc);
+                    }
+                    query = query.limit(state.itemsPerPage);
+
+                    const querySnapshot = await query.get();
+                    currentPageDocs = querySnapshot.docs;
+                    lastVisibleDoc = currentPageDocs[currentPageDocs.length - 1];
                 }
+
+                // Store total pages in state for navigation
+                state.totalPages = totalPages;
 
                 // Update questions count
                 const questionsCountElement = document.getElementById('questionsCount');
@@ -804,7 +824,9 @@
                 const paginationHTML = `
                     <div class="pagination">
                         ${state.currentPage > 1 ? `<button onclick="previousPage()" class="page-btn">السابق</button>` : ''}
-                        <span class="page-indicator">الصفحة ${state.currentPage} من ${totalPages}</span>
+                        ${searchText ? Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
+                            <button onclick="changePage(${page})" class="page-btn ${page === state.currentPage ? 'active' : ''}">${page}</button>
+                        `).join('') : `<span class="page-indicator">الصفحة ${state.currentPage} من ${totalPages}</span>`}
                         ${state.currentPage < totalPages ? `<button onclick="nextPage()" class="page-btn">التالي</button>` : ''}
                     </div>
                 `;

@@ -674,6 +674,7 @@
         }
 
         let lastVisibleDoc = null;
+        let lastPageDocs = {}; // Cache for each page's last document
 
         // Function to handle page changes
         async function changePage(newPage) {
@@ -701,6 +702,7 @@
         function resetToFirstPage() {
             state.currentPage = 1;
             lastVisibleDoc = null;
+            lastPageDocs = {};
             fetchQuestions(false);
         }
 
@@ -710,6 +712,7 @@
                 if (resetPage) {
                     state.currentPage = 1;
                     lastVisibleDoc = null;
+                    lastPageDocs = {};
                 }
 
                 const savedQuestionsContainer = document.getElementById('savedQuestionsContainer');
@@ -764,14 +767,27 @@
                     totalItems = totalSnapshot.docs.length;
                     totalPages = Math.ceil(totalItems / state.itemsPerPage);
 
-                    if (lastVisibleDoc && state.currentPage > 1) {
-                        query = query.startAfter(lastVisibleDoc);
+                    if (state.currentPage > 1) {
+                        // If we're going to a page we've seen before, use its last doc
+                        if (state.currentPage - 1 in lastPageDocs) {
+                            query = query.startAfter(lastPageDocs[state.currentPage - 1]);
+                        } else {
+                            // Otherwise, fetch all pages up to the desired page
+                            let tempQuery = query;
+                            for (let i = 1; i < state.currentPage; i++) {
+                                const tempSnapshot = await tempQuery.limit(state.itemsPerPage).get();
+                                const lastDoc = tempSnapshot.docs[tempSnapshot.docs.length - 1];
+                                lastPageDocs[i] = lastDoc;
+                                tempQuery = query.startAfter(lastDoc);
+                            }
+                            query = tempQuery;
+                        }
                     }
                     query = query.limit(state.itemsPerPage);
 
                     const querySnapshot = await query.get();
                     currentPageDocs = querySnapshot.docs;
-                    lastVisibleDoc = currentPageDocs[currentPageDocs.length - 1];
+                    lastPageDocs[state.currentPage] = currentPageDocs[currentPageDocs.length - 1];
                 }
 
                 // Store total pages in state for navigation

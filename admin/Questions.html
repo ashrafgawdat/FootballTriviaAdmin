@@ -440,6 +440,34 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // Enable offline persistence
+        db.enablePersistence()
+          .catch((err) => {
+            if (err.code == 'failed-precondition') {
+              // Multiple tabs open, persistence can only be enabled in one tab at a time.
+              console.warn('Persistence failed: Multiple tabs open');
+            } else if (err.code == 'unimplemented') {
+              // The current browser does not support persistence
+              console.warn('Persistence not supported by browser');
+            }
+          });
+
+        // Set up network status monitoring
+        db.enableNetwork().catch(console.error);
+        
+        let isOnline = true;
+        function updateOnlineStatus() {
+            isOnline = navigator.onLine;
+            if (!isOnline) {
+                console.warn('Network connection lost');
+            } else {
+                console.log('Network connection restored');
+                db.enableNetwork().catch(console.error);
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
         // Auth state observer
         auth.onAuthStateChanged(function(user) {
             const mainContent = document.getElementById('mainContent');

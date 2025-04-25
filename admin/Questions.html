@@ -497,8 +497,12 @@
         const state = {
             currentEditingId: null,
             currentPage: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            totalPages: 1
         };
+
+        // Cache for storing the last document of each page
+        const lastPageDocs = {};
 
         // Helper function to populate select element
         function populateSelect(selectElement, options) {
@@ -672,8 +676,6 @@
                 }
             }
         }
-
-        let lastPageDocs = {}; // Cache for each page's last document
 
         // Function to handle page changes
         async function changePage(newPage) {

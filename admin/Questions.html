@@ -702,7 +702,7 @@
         // Function to reset to page 1
         function resetToFirstPage() {
             state.currentPage = 1;
-            lastPageDocs = {};
+            Object.keys(lastPageDocs).forEach(key => delete lastPageDocs[key]);
             fetchQuestions(false);
         }
 
@@ -711,7 +711,7 @@
             try {
                 if (resetPage) {
                     state.currentPage = 1;
-                    lastPageDocs = {};
+                    Object.keys(lastPageDocs).forEach(key => delete lastPageDocs[key]);
                 }
 
                 const savedQuestionsContainer = document.getElementById('savedQuestionsContainer');

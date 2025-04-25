@@ -274,6 +274,11 @@
             color: white;
             border-color: #007bff;
         }
+        .page-indicator {
+            padding: 8px 16px;
+            color: #666;
+            font-size: 14px;
+        }
         .auth-section {
             text-align: center;
             margin-bottom: 20px;
@@ -668,15 +673,28 @@
             }
         }
 
-        // Function to handle page changes
-        function changePage(newPage) {
-            state.currentPage = newPage;
-            fetchQuestions(false); // false means don't reset page
+        let lastVisibleDoc = null;
+
+        // Function to handle next page
+        async function nextPage() {
+            if (lastVisibleDoc) {
+                state.currentPage++;
+                await fetchQuestions(false);
+            }
+        }
+
+        // Function to handle previous page
+        async function previousPage() {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                await fetchQuestions(false);
+            }
         }
 
         // Function to reset to page 1
         function resetToFirstPage() {
             state.currentPage = 1;
+            lastVisibleDoc = null;
             fetchQuestions(false);
         }
 
@@ -685,16 +703,11 @@
             try {
                 if (resetPage) {
                     state.currentPage = 1;
+                    lastVisibleDoc = null;
                 }
 
                 const savedQuestionsContainer = document.getElementById('savedQuestionsContainer');
                 savedQuestionsContainer.innerHTML = '<p>جاري تحميل الأسئلة...</p>';
-
-                // Get all questions with sorting
-                const querySnapshot = await db.collection('questions')
-                    .orderBy('dateModified', 'desc')
-                    .get();
-                let filteredDocs = querySnapshot.docs;
 
                 // Get search text and filters
                 const searchText = document.getElementById('searchText').value.toLowerCase();
@@ -702,37 +715,49 @@
                 const competition2Filter = document.getElementById('competition2').value;
                 const levelFilter = document.getElementById('level').value;
 
-                // Apply filters
+                // Build query
+                let query = db.collection('questions')
+                    .orderBy('dateModified', 'desc');
+
+                // Apply filters that can be done on server
+                if (competition1Filter) {
+                    query = query.where('competition1', '==', competition1Filter);
+                }
+                if (competition2Filter) {
+                    query = query.where('competition2', '==', competition2Filter);
+                }
+                if (levelFilter) {
+                    query = query.where('level', '==', levelFilter);
+                }
+
+                // Get total count for pagination
+                const totalSnapshot = await query.get();
+                const totalItems = totalSnapshot.docs.length;
+                const totalPages = Math.ceil(totalItems / state.itemsPerPage);
+
+                // Apply pagination
+                if (lastVisibleDoc && state.currentPage > 1) {
+                    query = query.startAfter(lastVisibleDoc);
+                }
+                query = query.limit(state.itemsPerPage);
+
+                // Get the current page data
+                const querySnapshot = await query.get();
+                let currentPageDocs = querySnapshot.docs;
+
+                // Update last visible doc for next page
+                lastVisibleDoc = currentPageDocs[currentPageDocs.length - 1];
+
+                // Apply text search filter (client-side since Firestore doesn't support full-text search)
                 if (searchText) {
-                    filteredDocs = filteredDocs.filter(doc => {
+                    currentPageDocs = currentPageDocs.filter(doc => {
                         const data = doc.data();
                         return data.question.toLowerCase().includes(searchText) ||
                             data.answers.some(answer => answer.toLowerCase().includes(searchText));
                     });
                 }
 
-                if (competition1Filter) {
-                    filteredDocs = filteredDocs.filter(doc => doc.data().competition1 === competition1Filter);
-                }
-
-                if (competition2Filter) {
-                    filteredDocs = filteredDocs.filter(doc => doc.data().competition2 === competition2Filter);
-                }
-
-                if (levelFilter) {
-                    filteredDocs = filteredDocs.filter(doc => doc.data().level === levelFilter);
-                }
-
-                // Calculate pagination
-                const totalItems = filteredDocs.length;
-                const totalPages = Math.ceil(totalItems / state.itemsPerPage);
-                const startIndex = (state.currentPage - 1) * state.itemsPerPage;
-                const endIndex = Math.min(startIndex + state.itemsPerPage, totalItems);
-
-                // Get current page items
-                const currentPageDocs = filteredDocs.slice(startIndex, endIndex);
-
-                // Update questions count and pagination info
+                // Update questions count
                 const questionsCountElement = document.getElementById('questionsCount');
                 questionsCountElement.textContent = `عدد الأسئلة: ${totalItems} | الصفحة ${state.currentPage} من ${totalPages}`;
 
@@ -778,11 +803,9 @@
                 // Generate pagination controls
                 const paginationHTML = `
                     <div class="pagination">
-                        ${state.currentPage > 1 ? `<button onclick="changePage(${state.currentPage - 1})" class="page-btn">السابق</button>` : ''}
-                        ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
-                            <button onclick="changePage(${page})" class="page-btn ${page === state.currentPage ? 'active' : ''}">${page}</button>
-                        `).join('')}
-                        ${state.currentPage < totalPages ? `<button onclick="changePage(${state.currentPage + 1})" class="page-btn">التالي</button>` : ''}
+                        ${state.currentPage > 1 ? `<button onclick="previousPage()" class="page-btn">السابق</button>` : ''}
+                        <span class="page-indicator">الصفحة ${state.currentPage} من ${totalPages}</span>
+                        ${state.currentPage < totalPages ? `<button onclick="nextPage()" class="page-btn">التالي</button>` : ''}
                     </div>
                 `;
 

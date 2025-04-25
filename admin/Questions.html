@@ -673,7 +673,6 @@
             }
         }
 
-        let lastVisibleDoc = null;
         let lastPageDocs = {}; // Cache for each page's last document
 
         // Function to handle page changes
@@ -701,7 +700,6 @@
         // Function to reset to page 1
         function resetToFirstPage() {
             state.currentPage = 1;
-            lastVisibleDoc = null;
             lastPageDocs = {};
             fetchQuestions(false);
         }
@@ -711,7 +709,6 @@
             try {
                 if (resetPage) {
                     state.currentPage = 1;
-                    lastVisibleDoc = null;
                     lastPageDocs = {};
                 }
 

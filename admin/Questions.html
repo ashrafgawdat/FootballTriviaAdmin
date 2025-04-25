@@ -774,8 +774,6 @@
                     // Client-side pagination for search
                     const allDocsSnapshot = await query.get();
                     const allDocs = allDocsSnapshot.docs;
-
-                    console.log('allDocs', allDocs);
                     
                     // Apply text search filter
                     const filteredDocs = allDocs.filter(doc => {
@@ -816,8 +814,6 @@
 
                     const querySnapshot = await query.get();
                     currentPageDocs = querySnapshot.docs;
-
-console.log('currentPageDocs', currentPageDocs);
 
                     lastPageDocs[state.currentPage] = currentPageDocs[currentPageDocs.length - 1];
                 }
